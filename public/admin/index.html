@@ -245,7 +245,8 @@ dialog p{margin:0 0 14px}
     rejected:["Refusée","ko"], expired:["Expirée","off"], cancelled:["Annulée","off"], absent:["Absent(e)","off"]
   };
   var TABS = [["declared","À vérifier"],["pending","En attente"],["validated","Validées"],["other","Refusées / expirées"],["absent","Absents"],["all","Toutes"]];
-  var SITE = location.href.replace(/admin\/.*$/, "");
+  // Racine du site, que l'admin soit ouvert en /admin, /admin/ ou /admin/index.html
+  var SITE = location.origin + location.pathname.replace(/admin(\/.*)?$/, "");
 
   function show(el, yes){ el.classList.toggle("hidden", !yes); }
   // Admin : on affiche aussi le message technique quand il n'y a pas de message lisible
