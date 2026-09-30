@@ -63,6 +63,8 @@
   var cam = null, busy = false, lastCode = "", lastAt = 0;
 
   function show(el, yes){ el.classList.toggle("hidden", !yes); }
+  // Admin : on affiche aussi le message technique quand il n'y a pas de message lisible
+  function adminErr(e){ return Brunch.errorText(e) + (e && !e.hint && e.message ? " (" + e.message + ")" : ""); }
   function el(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
 
   function parse(text){
@@ -106,7 +108,7 @@
       acts.push({label:"Annuler", cls:"btn-line", fn:next});
       showResult("ok", left + (left > 1 ? " places disponibles" : " place disponible"), lines, acts);
     } catch(e){
-      beep(false); showResult("ko", "Erreur", [Brunch.errorText(e)], [{label:"Réessayer", fn:function(){ check(code, admit); }}, {label:"Suivant", cls:"btn-line", fn:next}]);
+      beep(false); showResult("ko", "Erreur", [adminErr(e)], [{label:"Réessayer", fn:function(){ check(code, admit); }}, {label:"Suivant", cls:"btn-line", fn:next}]);
     }
   }
 

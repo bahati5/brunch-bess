@@ -482,7 +482,8 @@ begin
     venue_address    = case when p ? 'venue_address'    then nullif(p->>'venue_address', '')    else venue_address end,
     venue_maps_url   = case when p ? 'venue_maps_url'   then nullif(p->>'venue_maps_url', '')   else venue_maps_url end,
     venue_notes      = case when p ? 'venue_notes'      then nullif(p->>'venue_notes', '')      else venue_notes end,
-    updated_at       = now();
+    updated_at       = now()
+  where id;
   insert into audit_log (actor, action, details) values (_actor(), 'settings', p);
 end $$;
 

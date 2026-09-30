@@ -198,6 +198,8 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
   var SITE = location.href.replace(/admin\/.*$/, "");
 
   function show(el, yes){ el.classList.toggle("hidden", !yes); }
+  // Admin : on affiche aussi le message technique quand il n'y a pas de message lisible
+  function adminErr(e){ return Brunch.errorText(e) + (e && !e.hint && e.message ? " (" + e.message + ")" : ""); }
   function el(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
   function ago(iso){
     var m = Math.round((Date.now() - new Date(iso)) / 6e4);
@@ -348,7 +350,7 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
 
   // ---------- Actions ----------
   async function act(fn){
-    try { await fn(); } catch(e){ alert(Brunch.errorText(e)); }
+    try { await fn(); } catch(e){ alert(adminErr(e)); }
     await refresh();
   }
   function validate(r){
@@ -393,7 +395,7 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
       $("dlg-add").close();
       if (v("a-email")) Brunch.sendTicket({ref:res.ref, token:res.token});
       filter = "validated"; await refresh();
-    } catch(e){ $("a-err").textContent = Brunch.errorText(e); show($("a-err"), true); }
+    } catch(e){ $("a-err").textContent = adminErr(e); show($("a-err"), true); }
   });
 
   // ---------- Réglages ----------
@@ -419,7 +421,7 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     ["capacity","price","hold_minutes"].forEach(function(k){ if (p[k] === "") delete p[k]; });
     p.opening_at = fromLocal($("s-opening").value); p.closing_at = fromLocal($("s-closing").value);
     Brunch.rpc("admin_update_settings", {p:p}).then(function(){ $("settings").classList.remove("show"); refresh(); })
-      .catch(function(e){ $("s-err").textContent = Brunch.errorText(e); show($("s-err"), true); });
+      .catch(function(e){ $("s-err").textContent = adminErr(e); show($("s-err"), true); });
   });
 
   // ---------- Export ----------
