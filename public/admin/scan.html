@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 70 50%22%3E%3Crect width=%2270%22 height=%2250%22 rx=%228%22 fill=%22%2313265C%22/%3E%3Cpath d=%22M14 38 L16 14 L27 26 L35 10 L43 26 L54 14 L56 38 Z%22 fill=%22%23F7C51E%22/%3E%3C/svg%3E">
+<title>Contrôle des entrées — Grand Brunch Bessieux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Kaushan+Script&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+#reader{border-radius:18px;overflow:hidden;background:#0D1A40;min-height:260px}
+#reader video{border-radius:18px}
+.result{border-radius:20px;padding:22px;text-align:center;color:#13265C}
+.result.ok{background:#D6F5E3}
+.result.warn{background:var(--sun-soft)}
+.result.ko{background:#FDECEA;color:#8C1D18}
+.result .big{font-family:"Anton","Impact",sans-serif;font-size:2.4rem;line-height:1.1;display:block}
+.result .name{font-size:1.3rem;font-weight:800;display:block;margin-top:6px}
+.result .count{font-size:1.05rem;margin:6px 0 0}
+.result .row{margin-top:16px;justify-content:center}
+.manual{display:flex;gap:8px}
+.manual input{flex:1;text-transform:uppercase;font-family:ui-monospace,Consolas,monospace;letter-spacing:.1em}
+</style>
+</head>
+<body class="page">
+<header class="mini-top">
+  <div class="wrap">
+    <a class="logo" href="index.html">
+      <svg width="28" height="20" viewBox="0 0 70 50" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 40 L10 10 L24 26 L35 6 L46 26 L60 10 L64 40 Z"/></svg>
+      <span class="script">Bessieux</span>
+      <span class="caps">Entrées</span>
+    </a>
+    <nav><a href="index.html">Tableau de bord</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="narrow stack">
+    <p class="alert ko hidden" id="auth">Connecte-toi d'abord dans <a href="index.html">l'espace admin</a>.</p>
+    <div id="scanner" class="stack hidden">
+      <div id="reader"></div>
+      <button class="btn btn-sun" type="button" id="start">Activer la caméra</button>
+      <div id="result" aria-live="assertive"></div>
+      <form class="manual" id="manual">
+        <input id="code" placeholder="Code du ticket" autocomplete="off" aria-label="Code du ticket">
+        <button class="btn btn-navy" type="submit" style="padding-inline:20px">OK</button>
+      </form>
+    </div>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script src="../assets/config.js"></script>
+<script src="../assets/api.js"></script>
+<script>
+(function(){
+  var $ = function(id){ return document.getElementById(id); };
+  var cam = null, busy = false, lastCode = "", lastAt = 0;
+
+  function show(el, yes){ el.classList.toggle("hidden", !yes); }
+  function el(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+
+  function parse(text){
+    var m = String(text).match(/[?&]c=([A-Za-z0-9]+)/);
+    return (m ? m[1] : String(text)).toUpperCase().replace(/[^A-Z0-9]/g, "");
+  }
+
+  function beep(ok){
+    try {
+      var ctx = new (window.AudioContext || window.webkitAudioContext)(), o = ctx.createOscillator(), g = ctx.createGain();
+      o.frequency.value = ok ? 880 : 220; g.gain.value = .15; o.connect(g); g.connect(ctx.destination); o.start(); o.stop(ctx.currentTime + (ok ? .15 : .4));
+    } catch(e){}
+    if (navigator.vibrate) navigator.vibrate(ok ? 80 : [80, 60, 80]);
+  }
+
+  function showResult(cls, big, lines, actions){
+    var box = el("div", "result " + cls);
+    box.append(el("span", "big", big));
+    (lines || []).forEach(function(l, i){ box.append(el(i === 0 ? "span" : "p", i === 0 ? "name" : "count", l)); });
+    if (actions && actions.length){
+      var row = el("div", "row");
+      actions.forEach(function(a){ var b = el("button", "btn " + (a.cls || "btn-navy"), a.label); b.type = "button"; b.onclick = a.fn; row.append(b); });
+      box.append(row);
+    }
+    $("result").replaceChildren(box);
+  }
+
+  async function check(code, admit){
+    busy = true;
+    try {
+      var r = await Brunch.rpc("admin_check_in", {p_code:code, p_admit:admit || 0});
+      if (!r.found){ beep(false); showResult("ko", "Ticket inconnu", ["Code " + code], [{label:"Scanner le suivant", fn:next}]); return; }
+      var left = r.quantity - r.checked_in;
+      var lines = [r.name + " · Promo " + r.promo, "Ticket " + r.ref + " · " + r.quantity + (r.quantity > 1 ? " places" : " place") + " · " + r.checked_in + " déjà entrée(s)"];
+      if (r.status !== "validated"){ beep(false); showResult("ko", "Ticket non valide", lines, [{label:"Scanner le suivant", fn:next}]); return; }
+      if (admit){ beep(true); showResult("ok", admit + (admit > 1 ? " entrées OK" : " entrée OK"), lines, left > 0 ? [{label:"Faire entrer encore", fn:function(){ check(code, 0); }}, {label:"Suivant", cls:"btn-sun", fn:next}] : [{label:"Scanner le suivant", cls:"btn-sun", fn:next}]); return; }
+      if (left <= 0){ beep(false); showResult("warn", "Déjà utilisé", lines, [{label:"Scanner le suivant", fn:next}]); return; }
+      beep(true);
+      var acts = [{label:"Faire entrer 1", cls:"btn-sun", fn:function(){ check(code, 1); }}];
+      if (left > 1) acts.push({label:"Faire entrer les " + left, fn:function(){ check(code, left); }});
+      acts.push({label:"Annuler", cls:"btn-line", fn:next});
+      showResult("ok", left + (left > 1 ? " places disponibles" : " place disponible"), lines, acts);
+    } catch(e){
+      beep(false); showResult("ko", "Erreur", [Brunch.errorText(e)], [{label:"Réessayer", fn:function(){ check(code, admit); }}, {label:"Suivant", cls:"btn-line", fn:next}]);
+    }
+  }
+
+  function next(){ $("result").replaceChildren(); busy = false; lastCode = ""; if (cam) try { cam.resume(); } catch(e){} }
+
+  $("start").onclick = function(){
+    cam = new Html5Qrcode("reader");
+    cam.start({facingMode:"environment"}, {fps:10, qrbox:{width:230, height:230}}, function(text){
+      var code = parse(text);
+      if (busy || !code || (code === lastCode && Date.now() - lastAt < 4000)) return;
+      lastCode = code; lastAt = Date.now();
+      try { cam.pause(true); } catch(e){}
+      check(code, 0);
+    }).then(function(){ show($("start"), false); })
+      .catch(function(){ showResult("ko", "Caméra indisponible", ["Autorise l'accès à la caméra, ou saisis le code du ticket ci-dessous."]); });
+  };
+
+  $("manual").addEventListener("submit", function(ev){
+    ev.preventDefault(); var code = parse($("code").value); if (!code) return;
+    $("code").value = ""; if (cam) try { cam.pause(true); } catch(e){}
+    check(code, 0);
+  });
+
+  (async function(){
+    var s = Brunch.configured && (await Brunch.sb.auth.getSession()).data.session;
+    var ok = s && await Brunch.rpc("is_admin").catch(function(){ return false; });
+    show($("auth"), !ok); show($("scanner"), !!ok);
+  })();
+})();
+</script>
+</body>
+</html>

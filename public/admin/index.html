@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 70 50%22%3E%3Crect width=%2270%22 height=%2250%22 rx=%228%22 fill=%22%2313265C%22/%3E%3Cpath d=%22M14 38 L16 14 L27 26 L35 10 L43 26 L54 14 L56 38 Z%22 fill=%22%23F7C51E%22/%3E%3C/svg%3E">
+<title>Admin billetterie — Grand Brunch Bessieux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Kaushan+Script&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+.admin{width:min(1100px,100% - 32px);margin-inline:auto}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 18px}
+.stat{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px}
+.stat span{display:block;color:var(--muted);font-size:.78rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.stat b{font-family:"Anton","Impact",sans-serif;font-weight:400;font-size:2rem;line-height:1.1}
+.stat.hot{background:var(--sun-soft);border-color:var(--sun);color:#13265C}
+.stat.hot span{color:#13265C}
+.toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 14px}
+.tabs{display:flex;flex-wrap:wrap;gap:6px}
+.tab{min-height:40px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--card);color:var(--text);font:inherit;font-weight:700;font-size:.85rem;cursor:pointer}
+.tab[aria-pressed="true"]{background:#13265C;border-color:#13265C;color:#fff}
+.tab .n{display:inline-block;min-width:1.6em;margin-left:4px;padding:0 6px;border-radius:999px;background:var(--sky);color:var(--text);font-size:.75rem}
+.tab[aria-pressed="true"] .n{background:var(--sun);color:#13265C}
+.search{flex:1 1 220px;min-height:42px}
+.list{display:grid;gap:10px}
+.item{background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:14px 16px;display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) auto;gap:14px;align-items:center}
+.item.declared{border-color:var(--sun);box-shadow:inset 4px 0 0 var(--sun)}
+@media (max-width:820px){.item{grid-template-columns:1fr}}
+.item h3{margin:0;font-size:1.05rem;font-weight:800}
+.item .meta{color:var(--muted);font-size:.86rem;margin:2px 0 0}
+.item .pay{font-size:.9rem;line-height:1.5}
+.item .pay b{font-variant-numeric:tabular-nums}
+.item .acts{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+@media (max-width:820px){.item .acts{justify-content:flex-start}}
+.sbtn{min-height:40px;padding:8px 14px;border-radius:999px;border:1.5px solid var(--text);background:transparent;color:var(--text);font:inherit;font-weight:800;font-size:.74rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center}
+.sbtn:hover{background:var(--sky-pale)}
+.sbtn.ok{background:#13265C;border-color:#13265C;color:#fff}
+.sbtn.ko{border-color:#B3261E;color:#B3261E}
+.match{display:inline-block;margin-top:4px;padding:2px 10px;border-radius:999px;font-size:.75rem;font-weight:800;background:#D6F5E3;color:#0F5132}
+.match.warn{background:#FDECEA;color:#8C1D18}
+.empty{padding:28px;text-align:center;color:var(--muted);background:var(--card);border:1.5px dashed var(--line);border-radius:16px}
+dialog{border:0;border-radius:20px;padding:0;width:min(520px,100% - 32px);background:var(--card);color:var(--text);box-shadow:0 30px 80px -30px rgba(0,0,0,.6)}
+dialog::backdrop{background:rgba(13,26,64,.55)}
+dialog form{padding:22px 24px}
+dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:520px){.grid2{grid-template-columns:1fr}}
+.settings{display:none}
+.settings.show{display:block}
+.settings fieldset{border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px}
+.settings legend{padding:0 6px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem}
+.head-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 18px}
+</style>
+</head>
+<body class="page">
+<header class="mini-top">
+  <div class="wrap">
+    <a class="logo" href="../index.html">
+      <svg width="28" height="20" viewBox="0 0 70 50" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 40 L10 10 L24 26 L35 6 L46 26 L60 10 L64 40 Z"/></svg>
+      <span class="script">Bessieux</span>
+      <span class="caps">Admin</span>
+    </a>
+    <nav class="hidden" id="nav">
+      <a href="scan.html">Scanner</a>
+      <a href="#" id="logout">Déconnexion</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- Connexion -->
+  <div class="narrow hidden" id="login-view">
+    <h1 class="script page-title">Espace admin</h1>
+    <p class="lead">Réservé à l'équipe d'organisation.</p>
+    <form class="card stack" id="login" novalidate>
+      <div><label for="lg-email">E-mail</label><input id="lg-email" type="email" autocomplete="username" required></div>
+      <div><label for="lg-pass">Mot de passe</label><input id="lg-pass" type="password" autocomplete="current-password" required></div>
+      <p class="alert ko hidden" id="lg-err" role="alert"></p>
+      <button class="btn btn-sun" type="submit">Se connecter</button>
+    </form>
+  </div>
+
+  <!-- Tableau de bord -->
+  <div class="admin hidden" id="dash-view">
+    <div class="head-row">
+      <div>
+        <h1 class="script page-title" style="margin:0">Billetterie</h1>
+        <p class="muted" style="margin:0" id="who"></p>
+      </div>
+      <div class="row">
+        <button class="sbtn" type="button" id="btn-add">+ Réservation manuelle</button>
+        <button class="sbtn" type="button" id="btn-export">Export CSV</button>
+        <button class="sbtn" type="button" id="btn-settings">Réglages</button>
+      </div>
+    </div>
+
+    <div class="stats" id="stats"></div>
+
+    <section class="card settings" id="settings">
+      <h2>Réglages</h2>
+      <form id="settings-form" novalidate>
+        <fieldset><legend>Billetterie</legend>
+          <div class="grid2">
+            <div><label for="s-capacity">Nombre de places</label><input id="s-capacity" type="number" min="0"></div>
+            <div><label for="s-price">Prix par personne (FCFA)</label><input id="s-price" type="number" min="1"></div>
+            <div><label for="s-hold">Blocage des places (minutes)</label><input id="s-hold" type="number" min="1"></div>
+            <div><label for="s-max">Maximum par réservation <span class="muted">(vide = pas de limite)</span></label><input id="s-max" type="number" min="1"></div>
+            <div><label for="s-opening">Ouverture</label><input id="s-opening" type="datetime-local"></div>
+            <div><label for="s-closing">Fermeture</label><input id="s-closing" type="datetime-local"></div>
+          </div>
+        </fieldset>
+        <fieldset><legend>Numéros de réception</legend>
+          <div class="grid2">
+            <div><label for="s-airtel">Airtel Money</label><input id="s-airtel" type="tel"></div>
+            <div><label for="s-airtel-name">Nom affiché (Airtel)</label><input id="s-airtel-name"></div>
+            <div><label for="s-moov">Moov Money</label><input id="s-moov" type="tel"></div>
+            <div><label for="s-moov-name">Nom affiché (Moov)</label><input id="s-moov-name"></div>
+            <div><label for="s-contact">WhatsApp de contact</label><input id="s-contact" type="tel" placeholder="241…"></div>
+          </div>
+        </fieldset>
+        <fieldset><legend>Lieu (révélé sur les tickets validés)</legend>
+          <div class="grid2">
+            <div><label for="s-venue">Nom du lieu</label><input id="s-venue"></div>
+            <div><label for="s-address">Adresse</label><input id="s-address"></div>
+            <div><label for="s-maps">Lien Google Maps</label><input id="s-maps" type="url"></div>
+            <div><label for="s-notes">Infos d'accès</label><input id="s-notes"></div>
+          </div>
+        </fieldset>
+        <p class="alert ko hidden" id="s-err" role="alert"></p>
+        <div class="row"><button class="btn btn-sun" type="submit">Enregistrer</button></div>
+      </form>
+    </section>
+
+    <div class="toolbar">
+      <div class="tabs" id="tabs" role="group" aria-label="Filtrer"></div>
+      <input class="search" id="search" type="search" placeholder="Rechercher : nom, réf., numéro, ID…" aria-label="Rechercher">
+    </div>
+    <div class="list" id="list"></div>
+  </div>
+</main>
+
+<dialog id="dlg-reject">
+  <form method="dialog" id="reject-form">
+    <h2>Refuser le paiement de <span id="rj-name"></span></h2>
+    <label for="rj-reason">Motif affiché à l'invité</label>
+    <select id="rj-reason">
+      <option>Paiement introuvable sur nos comptes.</option>
+      <option>Montant reçu différent du montant attendu.</option>
+      <option>ID de transaction incorrect.</option>
+      <option value="">Autre motif…</option>
+    </select>
+    <textarea id="rj-other" class="hidden" style="margin-top:10px" placeholder="Précise le motif"></textarea>
+    <div class="row" style="margin-top:16px">
+      <button class="btn btn-line" value="cancel" formnovalidate>Annuler</button>
+      <button class="btn btn-navy" value="ok">Refuser</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-add">
+  <form method="dialog" id="add-form" novalidate>
+    <h2>Réservation manuelle (validée d'office)</h2>
+    <p class="muted" style="margin:-6px 0 12px;font-size:.9rem">Pour un paiement en espèces ou un invité sans smartphone. Le ticket est émis tout de suite.</p>
+    <div class="grid2">
+      <div><label for="a-nom">Nom</label><input id="a-nom" required></div>
+      <div><label for="a-prenom">Prénom</label><input id="a-prenom" required></div>
+      <div><label for="a-promo">Promotion</label><select id="a-promo"><option>2018</option><option>2019</option><option>2020</option></select></div>
+      <div><label for="a-tel">WhatsApp</label><input id="a-tel" type="tel" required></div>
+      <div><label for="a-email">E-mail <span class="muted">(facultatif)</span></label><input id="a-email" type="email"></div>
+      <div><label for="a-qty">Places</label><input id="a-qty" type="number" min="1" value="1" required></div>
+    </div>
+    <label for="a-note" style="margin-top:12px">Note (mode de paiement…)</label><input id="a-note" placeholder="Espèces remises à …">
+    <p class="alert ko hidden" id="a-err" role="alert" style="margin-top:12px"></p>
+    <div class="row" style="margin-top:16px">
+      <button class="btn btn-line" value="cancel" formnovalidate>Annuler</button>
+      <button class="btn btn-navy" value="ok">Créer le ticket</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="../assets/config.js"></script>
+<script src="../assets/api.js"></script>
+<script>
+(function(){
+  var sb = Brunch.sb, $ = function(id){ return document.getElementById(id); };
+  var rows = [], sms = [], settings = null, me = null, filter = "declared", timer = null;
+  var OPS = {airtel:"Airtel", moov:"Moov"};
+  var STATUS = {
+    pending:["En attente de paiement","wait"], declared:["À vérifier","wait"], validated:["Validée","ok"],
+    rejected:["Refusée","ko"], expired:["Expirée","off"], cancelled:["Annulée","off"], absent:["Absent(e)","off"]
+  };
+  var TABS = [["declared","À vérifier"],["pending","En attente"],["validated","Validées"],["other","Refusées / expirées"],["absent","Absents"],["all","Toutes"]];
+  var SITE = location.href.replace(/admin\/.*$/, "");
+
+  function show(el, yes){ el.classList.toggle("hidden", !yes); }
+  function el(tag, cls, text){ var e = document.createElement(tag); if (cls) e.className = cls; if (text != null) e.textContent = text; return e; }
+  function ago(iso){
+    var m = Math.round((Date.now() - new Date(iso)) / 6e4);
+    return m < 1 ? "à l'instant" : m < 60 ? "il y a " + m + " min" : m < 1440 ? "il y a " + Math.floor(m / 60) + " h" : Brunch.dateTime(iso);
+  }
+  function ticketUrl(r){ return SITE + Brunch.resaUrl(r.ref, r.access_token); }
+  function isActive(r){ return r.status === "validated" || r.status === "declared" || (r.status === "pending" && new Date(r.expires_at) > new Date()); }
+  function effStatus(r){ return r.status === "pending" && new Date(r.expires_at) <= new Date() ? "expired" : r.status; }
+
+  // ---------- Session ----------
+  async function boot(){
+    if (!Brunch.configured){ show($("login-view"), true); $("lg-err").textContent = "Renseigne assets/config.js avec les clés Supabase."; show($("lg-err"), true); return; }
+    var s = (await sb.auth.getSession()).data.session;
+    if (!s) return showLogin();
+    var ok = await Brunch.rpc("is_admin").catch(function(){ return false; });
+    if (!ok){ await sb.auth.signOut(); return showLogin("Ce compte n'a pas accès à l'admin."); }
+    var a = await sb.from("admins").select("name").eq("user_id", s.user.id).maybeSingle();
+    me = a.data ? a.data.name : s.user.email;
+    $("who").textContent = "Connecté(e) : " + me;
+    show($("login-view"), false); show($("dash-view"), true); show($("nav"), true);
+    await refresh();
+    timer = setInterval(refresh, 30000);
+  }
+  function showLogin(msg){
+    clearInterval(timer);
+    show($("dash-view"), false); show($("nav"), false); show($("login-view"), true);
+    if (msg){ $("lg-err").textContent = msg; show($("lg-err"), true); }
+  }
+  $("login").addEventListener("submit", async function(ev){
+    ev.preventDefault(); show($("lg-err"), false);
+    var r = await sb.auth.signInWithPassword({email:$("lg-email").value.trim(), password:$("lg-pass").value});
+    if (r.error){ $("lg-err").textContent = "E-mail ou mot de passe incorrect."; show($("lg-err"), true); return; }
+    boot();
+  });
+  $("logout").onclick = async function(e){ e.preventDefault(); await sb.auth.signOut(); showLogin(); };
+
+  // ---------- Données ----------
+  async function refresh(){
+    var res = await Promise.all([
+      sb.from("reservations").select("*").order("created_at", {ascending:false}),
+      sb.from("settings").select("*").single(),
+      sb.from("sms_inbox").select("*").order("received_at", {ascending:false}).limit(500)
+    ]);
+    if (res[0].error){ if (res[0].error.code === "PGRST301") return showLogin("Session expirée."); return; }
+    rows = res[0].data; settings = res[1].data; sms = res[2].data || [];
+    renderStats(); renderTabs(); renderList();
+  }
+
+  function renderStats(){
+    var sum = function(f){ return rows.filter(f).reduce(function(a, r){ return a + r.quantity; }, 0); };
+    var sold = sum(function(r){ return r.status === "validated"; });
+    var toCheck = sum(function(r){ return r.status === "declared"; });
+    var held = sum(function(r){ return r.status === "pending" && isActive(r); });
+    var cash = rows.filter(function(r){ return r.status === "validated"; }).reduce(function(a, r){ return a + r.amount; }, 0);
+    var inside = rows.reduce(function(a, r){ return a + r.checked_in; }, 0);
+    var left = Math.max(settings.capacity - sold - toCheck - held, 0);
+    var cards = [
+      ["Places vendues", sold + " / " + settings.capacity], ["Places à vérifier", toCheck, toCheck > 0], ["Bloquées (non payées)", held],
+      ["Places restantes", left], ["Encaissé", Brunch.fcfa(cash)], ["Entrées scannées", inside]
+    ];
+    $("stats").replaceChildren.apply($("stats"), cards.map(function(c){
+      var d = el("div", "stat" + (c[2] ? " hot" : "")); d.append(el("span", "", c[0]), el("b", "", String(c[1]))); return d;
+    }));
+  }
+
+  function inTab(r, t){
+    var s = effStatus(r);
+    return t === "all" ? true : t === "other" ? (s === "rejected" || s === "expired" || s === "cancelled") : s === t;
+  }
+  function renderTabs(){
+    $("tabs").replaceChildren.apply($("tabs"), TABS.map(function(t){
+      var b = el("button", "tab", t[1]); b.type = "button"; b.setAttribute("aria-pressed", filter === t[0]);
+      b.append(el("span", "n", String(rows.filter(function(r){ return inTab(r, t[0]); }).length)));
+      b.onclick = function(){ filter = t[0]; renderTabs(); renderList(); };
+      return b;
+    }));
+  }
+
+  function smsFor(r){
+    if (!r.txn_id) return null;
+    return sms.find(function(s){ return s.operator === r.operator && s.txn_id && s.txn_id.toUpperCase() === r.txn_id.toUpperCase(); }) || null;
+  }
+
+  function renderList(){
+    var q = $("search").value.trim().toLowerCase();
+    var list = rows.filter(function(r){ return inTab(r, filter); }).filter(function(r){
+      if (!q) return true;
+      return [r.ref, r.first_name, r.last_name, r.whatsapp, r.email, r.payer_phone, r.txn_id, r.promo].join(" ").toLowerCase().indexOf(q) >= 0;
+    });
+    if (filter === "declared") list.sort(function(a, b){ return new Date(a.declared_at) - new Date(b.declared_at); });
+    if (!list.length){ $("list").replaceChildren(el("div", "empty", q ? "Aucun résultat." : "Rien ici pour le moment.")); return; }
+    $("list").replaceChildren.apply($("list"), list.map(item));
+  }
+
+  function item(r){
+    var s = effStatus(r), st = STATUS[s];
+    var box = el("article", "item" + (s === "declared" ? " declared" : ""));
+
+    var who = el("div");
+    var h = el("h3", "", r.first_name + " " + r.last_name + " ");
+    var pill = el("span", "pill " + st[1], st[0]); pill.style.marginLeft = "6px"; h.append(pill);
+    who.append(h, el("p", "meta", r.ref + " · Promo " + r.promo + " · " + r.whatsapp + (r.email ? " · " + r.email : "")),
+               el("p", "meta", "Réservé " + ago(r.created_at) + (r.message ? " · « " + r.message + " »" : "")));
+
+    var pay = el("div", "pay");
+    if (r.quantity){
+      var l1 = el("div"); l1.append(el("b", "", r.quantity + (r.quantity > 1 ? " places · " : " place · ") + Brunch.fcfa(r.amount)));
+      pay.append(l1);
+    }
+    if (r.txn_id){
+      pay.append(el("div", "", OPS[r.operator] + " depuis " + r.payer_phone));
+      var l3 = el("div", "", "ID : "); l3.append(el("b", "", r.txn_id)); pay.append(l3);
+      if (r.declared_at) pay.append(el("div", "meta", "Déclaré " + ago(r.declared_at)));
+      if (s === "declared"){
+        var m = smsFor(r);
+        if (m) pay.append(el("span", "match" + (m.amount === r.amount ? "" : " warn"),
+          m.amount === r.amount ? "SMS reçu : montant OK" : "SMS reçu : " + Brunch.fcfa(m.amount) + " au lieu de " + Brunch.fcfa(r.amount)));
+      }
+    }
+    if (s === "pending") pay.append(el("div", "meta", "Places bloquées jusqu'à " + Brunch.time(r.expires_at)));
+    if (s === "validated") pay.append(el("div", "meta", "Validée par " + (r.validated_by === "auto" ? "rapprochement SMS" : r.validated_by) + " · entrées " + r.checked_in + "/" + r.quantity));
+    if (r.rejected_reason) pay.append(el("div", "meta", "Motif : " + r.rejected_reason));
+    if (r.admin_note) pay.append(el("div", "meta", "Note : " + r.admin_note));
+
+    var acts = el("div", "acts");
+    function btn(label, cls, fn){ var b = el("button", "sbtn " + (cls || ""), label); b.type = "button"; b.onclick = fn; acts.append(b); return b; }
+    if (s === "declared" || s === "pending" || s === "rejected" || s === "expired"){
+      btn(s === "declared" ? "Valider" : "Valider quand même", "ok", function(){ validate(r); });
+    }
+    if (s === "declared") btn("Refuser", "ko", function(){ reject(r); });
+    if (s === "validated"){
+      var wa = el("a", "sbtn", "WhatsApp");
+      wa.href = Brunch.waLink(r.whatsapp, "Bonjour " + r.first_name + ", ton paiement est confirmé ! Voici ton ticket pour le Grand Brunch des retrouvailles (lieu et QR code) : " + ticketUrl(r));
+      wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
+      btn("Copier le lien", "", function(){ var b = this; Brunch.copy(ticketUrl(r)).then(function(){ b.textContent = "Copié !"; }); });
+      if (r.email) btn(r.email_sent_at ? "Renvoyer l'e-mail" : "Envoyer l'e-mail", "", function(){
+        var b = this; b.disabled = true;
+        sb.functions.invoke("send-ticket", {body:{id:r.id, resend:true}}).then(function(res){
+          b.textContent = res.data && res.data.sent ? "E-mail envoyé" : "Échec de l'envoi"; refresh();
+        });
+      });
+    }
+    if (s !== "cancelled" && s !== "absent" && r.checked_in === 0) btn("Annuler", "ko", function(){ cancel(r); });
+
+    box.append(who, pay, acts);
+    return box;
+  }
+
+  // ---------- Actions ----------
+  async function act(fn){
+    try { await fn(); } catch(e){ alert(Brunch.errorText(e)); }
+    await refresh();
+  }
+  function validate(r){
+    var msg = "Valider " + r.first_name + " " + r.last_name + " (" + r.quantity + " place(s), " + Brunch.fcfa(r.amount) + ") ?";
+    if (r.txn_id) msg += "\n\nVérifie d'abord sur le téléphone : SMS " + OPS[r.operator] + " de " + r.payer_phone + ", ID " + r.txn_id + ".";
+    if (!isActive(r)) msg += "\n\nAttention : ces places n'étaient plus bloquées. Vérifie qu'il en reste.";
+    if (!confirm(msg)) return;
+    act(async function(){
+      await Brunch.rpc("admin_validate", {p_id:r.id, p_note:null});
+      Brunch.sendTicket({ref:r.ref, token:r.access_token});
+    });
+  }
+  function reject(r){
+    var d = $("dlg-reject"); $("rj-name").textContent = r.first_name + " " + r.last_name;
+    $("rj-reason").selectedIndex = 0; $("rj-other").value = ""; show($("rj-other"), false);
+    d.onclose = function(){
+      if (d.returnValue !== "ok") return;
+      var reason = $("rj-reason").value || $("rj-other").value.trim() || "Paiement non confirmé.";
+      act(function(){ return Brunch.rpc("admin_reject", {p_id:r.id, p_reason:reason}); });
+    };
+    d.showModal();
+  }
+  $("rj-reason").onchange = function(){ show($("rj-other"), !this.value); };
+  function cancel(r){
+    var reason = prompt("Annuler la réservation " + r.ref + " de " + r.first_name + " " + r.last_name + " ?\nMotif (facultatif) :", "");
+    if (reason === null) return;
+    act(function(){ return Brunch.rpc("admin_cancel", {p_id:r.id, p_reason:reason}); });
+  }
+
+  $("btn-add").onclick = function(){ $("add-form").reset(); show($("a-err"), false); $("dlg-add").showModal(); };
+  $("add-form").addEventListener("submit", async function(ev){
+    if (ev.submitter && ev.submitter.value !== "ok") return;
+    ev.preventDefault();
+    var v = function(id){ return $(id).value.trim(); };
+    var qty = parseInt(v("a-qty"), 10);
+    if (!v("a-nom") || !v("a-prenom") || !/^\+?\d{8,15}$/.test(v("a-tel").replace(/[\s.\-()]/g, "")) || !(qty > 0)){
+      $("a-err").textContent = "Remplis nom, prénom, un numéro valide et le nombre de places."; show($("a-err"), true); return;
+    }
+    try {
+      var res = await Brunch.rpc("admin_create_reservation", {p_last_name:v("a-nom"), p_first_name:v("a-prenom"), p_promo:v("a-promo"),
+        p_whatsapp:v("a-tel").replace(/[\s.\-()]/g, ""), p_email:v("a-email") || null, p_quantity:qty, p_note:v("a-note") || null});
+      $("dlg-add").close();
+      if (v("a-email")) Brunch.sendTicket({ref:res.ref, token:res.token});
+      filter = "validated"; await refresh();
+    } catch(e){ $("a-err").textContent = Brunch.errorText(e); show($("a-err"), true); }
+  });
+
+  // ---------- Réglages ----------
+  function toLocal(iso){
+    // datetime-local en heure de Libreville (UTC+1, sans heure d'été)
+    var d = new Date(new Date(iso).getTime() + 36e5); return d.toISOString().slice(0, 16);
+  }
+  function fromLocal(v){ return v ? v + ":00+01:00" : null; }
+  var MAP = {"s-capacity":"capacity","s-price":"price","s-hold":"hold_minutes","s-max":"max_per_booking","s-airtel":"airtel_number","s-airtel-name":"airtel_name",
+    "s-moov":"moov_number","s-moov-name":"moov_name","s-contact":"contact_whatsapp","s-venue":"venue_name","s-address":"venue_address","s-maps":"venue_maps_url","s-notes":"venue_notes"};
+  $("btn-settings").onclick = function(){
+    var box = $("settings"), open = !box.classList.contains("show");
+    box.classList.toggle("show", open);
+    if (!open) return;
+    Object.keys(MAP).forEach(function(id){ $(id).value = settings[MAP[id]] == null ? "" : settings[MAP[id]]; });
+    $("s-opening").value = toLocal(settings.opening_at); $("s-closing").value = toLocal(settings.closing_at);
+    box.scrollIntoView({behavior:"smooth", block:"start"});
+  };
+  $("settings-form").addEventListener("submit", function(ev){
+    ev.preventDefault(); show($("s-err"), false);
+    var p = {};
+    Object.keys(MAP).forEach(function(id){ p[MAP[id]] = $(id).value.trim(); });
+    ["capacity","price","hold_minutes"].forEach(function(k){ if (p[k] === "") delete p[k]; });
+    p.opening_at = fromLocal($("s-opening").value); p.closing_at = fromLocal($("s-closing").value);
+    Brunch.rpc("admin_update_settings", {p:p}).then(function(){ $("settings").classList.remove("show"); refresh(); })
+      .catch(function(e){ $("s-err").textContent = Brunch.errorText(e); show($("s-err"), true); });
+  });
+
+  // ---------- Export ----------
+  $("btn-export").onclick = function(){
+    var cols = [["ref","Référence"],["status","Statut"],["last_name","Nom"],["first_name","Prénom"],["promo","Promo"],["whatsapp","WhatsApp"],["email","E-mail"],
+      ["quantity","Places"],["amount","Montant"],["operator","Opérateur"],["payer_phone","Payé depuis"],["txn_id","ID transaction"],["declared_at","Déclaré le"],
+      ["validated_by","Validé par"],["validated_at","Validé le"],["checked_in","Entrées"],["message","Message"],["admin_note","Note"],["created_at","Créé le"]];
+    var q = function(v){ v = v == null ? "" : String(v); return /[";\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+    var csv = [cols.map(function(c){ return c[1]; }).join(";")].concat(rows.map(function(r){
+      return cols.map(function(c){ return q(c[0] === "status" ? STATUS[effStatus(r)][0] : r[c[0]]); }).join(";");
+    })).join("\n");
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob(["﻿" + csv], {type:"text/csv;charset=utf-8"}));
+    a.download = "reservations-brunch-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  };
+
+  $("search").addEventListener("input", renderList);
+  boot();
+})();
+</script>
+</body>
+</html>

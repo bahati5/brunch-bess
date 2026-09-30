@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 70 50%22%3E%3Crect width=%2270%22 height=%2250%22 rx=%228%22 fill=%22%2313265C%22/%3E%3Cpath d=%22M14 38 L16 14 L27 26 L35 10 L43 26 L54 14 L56 38 Z%22 fill=%22%23F7C51E%22/%3E%3C/svg%3E">
+<title>Ma réservation — Grand Brunch Bessieux</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Caveat:wght@500;700&family=Kaushan+Script&family=Manrope:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="assets/app.css">
+</head>
+<body class="page">
+<header class="mini-top">
+  <div class="wrap">
+    <a class="logo" href="index.html" aria-label="Retour à l'invitation">
+      <svg width="28" height="20" viewBox="0 0 70 50" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 40 L10 10 L24 26 L35 6 L46 26 L60 10 L64 40 Z"/></svg>
+      <span class="script">Bessieux</span>
+      <span class="caps">Alumni</span>
+    </a>
+    <nav><a href="index.html">L'invitation</a></nav>
+  </div>
+</header>
+
+<main>
+  <div class="narrow" id="app" aria-live="polite">
+    <p class="muted">Chargement de ta réservation…</p>
+  </div>
+</main>
+
+<!-- Retrouver une réservation -->
+<template id="tpl-lookup">
+  <h1 class="script page-title">Ma réservation</h1>
+  <p class="lead">Indique la référence reçue lors de ta réservation (elle commence par BB-) et ton numéro WhatsApp.</p>
+  <form class="card stack" id="lookup" novalidate>
+    <div><label for="l-ref">Référence</label><input id="l-ref" autocapitalize="characters" placeholder="BB-XXXXX" required></div>
+    <div><label for="l-tel">Numéro WhatsApp</label><input id="l-tel" type="tel" inputmode="tel" placeholder="+241 …" required></div>
+    <p class="alert ko hidden" id="l-err" role="alert"></p>
+    <button class="btn btn-sun" type="submit">Retrouver ma réservation</button>
+  </form>
+  <p class="fine center" style="margin-top:18px"><a href="index.html#reserver">Pas encore de réservation ? Réserve ta place</a></p>
+</template>
+
+<!-- En attente de paiement -->
+<template id="tpl-pay">
+  <h1 class="script page-title">Plus qu'une étape !</h1>
+  <p class="lead">Bonjour <b data-f="first_name"></b>, tes places sont bloquées. Paie par mobile money puis déclare ton paiement ci-dessous.</p>
+
+  <section class="card">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <span class="pill wait">En attente de paiement</span>
+      <span class="muted">Réf. <b data-f="ref"></b></span>
+    </div>
+    <p class="caps muted" style="margin:20px 0 4px">Montant exact à envoyer</p>
+    <p class="amount" data-f="amount_fmt"></p>
+    <p class="muted" style="margin:6px 0 0"><span data-f="places"></span> · places bloquées jusqu'à <b data-f="expires_time"></b> (<span class="timer" id="timer"></span>)</p>
+  </section>
+
+  <section class="card">
+    <h2>1. Envoie le paiement</h2>
+    <div class="ops" role="radiogroup" aria-label="Opérateur">
+      <label class="op airtel"><input type="radio" name="op" value="airtel"><span class="dot" aria-hidden="true"></span>Airtel Money</label>
+      <label class="op moov"><input type="radio" name="op" value="moov"><span class="dot" aria-hidden="true"></span>Moov Money</label>
+    </div>
+    <div class="paybox" id="paybox">
+      <div class="copyline"><div><span>Numéro <span data-f="op_label"></span></span><b id="pay-number"></b><span id="pay-name"></span></div><button class="copy-btn" type="button" data-copy="pay-number">Copier</button></div>
+      <div class="copyline"><div><span>Montant</span><b data-f="amount_fmt"></b></div><button class="copy-btn" type="button" data-copy-value="amount">Copier</button></div>
+      <div class="copyline"><div><span>Motif / référence (si l'opérateur le demande)</span><b data-f="ref"></b></div><button class="copy-btn" type="button" data-copy-value="ref">Copier</button></div>
+    </div>
+    <ol class="steps muted" style="margin-top:14px">
+      <li>Fais un transfert du <b>montant exact</b> vers ce numéro.</li>
+      <li>Garde le <b>SMS de confirmation</b> : il contient l'ID de transaction.</li>
+    </ol>
+  </section>
+
+  <section class="card">
+    <h2>2. Déclare ton paiement</h2>
+    <form class="stack" id="declare" novalidate></form>
+  </section>
+</template>
+
+<!-- Formulaire de déclaration (réutilisé : attente, refus, délai dépassé) -->
+<template id="tpl-declare">
+  <fieldset>
+    <legend>Opérateur utilisé</legend>
+    <div class="ops">
+      <label class="op airtel"><input type="radio" name="d-op" value="airtel"><span class="dot" aria-hidden="true"></span>Airtel Money</label>
+      <label class="op moov"><input type="radio" name="d-op" value="moov"><span class="dot" aria-hidden="true"></span>Moov Money</label>
+    </div>
+  </fieldset>
+  <div><label for="d-phone">Numéro qui a envoyé le paiement</label><input id="d-phone" type="tel" inputmode="tel" required></div>
+  <div><label for="d-txn">ID de transaction <span style="font-weight:400;color:var(--muted)">(dans le SMS de confirmation)</span></label><input id="d-txn" autocapitalize="characters" autocomplete="off" spellcheck="false" required></div>
+  <p class="alert ko hidden" id="d-err" role="alert"></p>
+  <button class="btn btn-navy" type="submit">J'ai payé, valider</button>
+  <p class="fine">Les paiements sont vérifiés avec les SMS reçus par l'organisation. Une fausse déclaration est refusée.</p>
+</template>
+
+<!-- Paiement déclaré -->
+<template id="tpl-declared">
+  <h1 class="script page-title">Paiement reçu, on vérifie !</h1>
+  <p class="lead">Merci <b data-f="first_name"></b> ! Dès que l'équipe confirme ton paiement, ton ticket s'affiche ici et part par e-mail à <b data-f="email"></b>.</p>
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <span class="pill wait">Vérification en cours</span>
+      <span class="muted">Réf. <b data-f="ref"></b></span>
+    </div>
+    <dl class="kv">
+      <dt>Montant</dt><dd data-f="amount_fmt"></dd>
+      <dt>Opérateur</dt><dd data-f="op_label"></dd>
+      <dt>Envoyé depuis</dt><dd data-f="payer_phone"></dd>
+      <dt>ID de transaction</dt><dd data-f="txn_id"></dd>
+    </dl>
+    <p class="fine">Cette page se met à jour toute seule. Tu peux aussi la fermer : le lien reste valable.</p>
+    <div class="row">
+      <button class="btn btn-line" type="button" id="fix">Corriger ma déclaration</button>
+      <a class="btn btn-line hidden" id="contact" target="_blank" rel="noopener">Contacter l'organisation</a>
+    </div>
+  </section>
+  <section class="card hidden" id="fix-card">
+    <h2>Corriger ma déclaration</h2>
+    <form class="stack" id="declare" novalidate></form>
+  </section>
+</template>
+
+<!-- Ticket validé -->
+<template id="tpl-ticket">
+  <h1 class="script page-title">C'est tout bon !</h1>
+  <p class="lead">Ton paiement est confirmé. Présente ce QR code à l'entrée, sur ton téléphone ou imprimé.</p>
+  <article class="ticket" aria-label="Ticket">
+    <div class="ticket-head">
+      <span class="caps">Bessieux Alumni · Promos 2018 · 2019 · 2020</span>
+      <span class="script">Grand Brunch des retrouvailles</span>
+      <span style="font-weight:700">Samedi 31 octobre 2026 · à partir de 12h</span>
+    </div>
+    <div class="ticket-body">
+      <dl class="kv">
+        <dt>Titulaire</dt><dd data-f="full_name"></dd>
+        <dt>Promo</dt><dd data-f="promo"></dd>
+        <dt>Valable pour</dt><dd data-f="places"></dd>
+        <dt>Référence</dt><dd data-f="ref"></dd>
+        <dt>Entrées</dt><dd data-f="entries"></dd>
+      </dl>
+      <div class="qr"><div id="qr"></div><p class="qr-code" data-f="ticket_code"></p></div>
+    </div>
+  </article>
+  <section class="card venue hidden" id="venue" style="margin-top:18px">
+    <span class="caps">Le lieu, enfin révélé</span>
+    <b data-f="venue_name"></b>
+    <span data-f="venue_address"></span>
+    <p style="margin:8px 0 0" data-f="venue_notes"></p>
+    <p style="margin:8px 0 0"><a id="venue-map" target="_blank" rel="noopener" class="hidden">Ouvrir dans Maps</a></p>
+  </section>
+  <div class="row" style="margin-top:18px">
+    <button class="btn btn-sun" type="button" id="pdf">Télécharger le PDF</button>
+  </div>
+  <p class="fine" id="mail-note"></p>
+</template>
+
+<!-- Refus / délai dépassé / annulé -->
+<template id="tpl-problem">
+  <h1 class="script page-title" data-f="title"></h1>
+  <section class="card stack">
+    <div class="row" style="justify-content:space-between;align-items:center">
+      <span class="pill" data-f="pill"></span>
+      <span class="muted">Réf. <b data-f="ref"></b></span>
+    </div>
+    <p style="margin:0" data-f="text"></p>
+    <p class="alert info hidden" id="reason"></p>
+    <div class="row">
+      <a class="btn btn-sun hidden" id="new-resa" href="index.html#reserver">Faire une nouvelle réservation</a>
+      <a class="btn btn-line hidden" id="contact" target="_blank" rel="noopener">Contacter l'organisation</a>
+    </div>
+  </section>
+  <section class="card hidden" id="redeclare-card">
+    <h2>Tu as déjà payé ?</h2>
+    <p class="muted" style="margin:-4px 0 14px">Indique les informations de ton paiement : <span data-f="amount_fmt"></span> attendus.</p>
+    <form class="stack" id="declare" novalidate></form>
+  </section>
+</template>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="assets/config.js"></script>
+<script src="assets/api.js"></script>
+<script src="assets/ticket.js"></script>
+<script>
+(function(){
+  var app = document.getElementById("app");
+  var params = new URLSearchParams(location.search);
+  var ref = params.get("r"), token = params.get("t");
+  var info = null, resa = null, poll = null, countdown = null;
+  var OPS = {airtel:"Airtel Money", moov:"Moov Money"};
+
+  function $(id){ return document.getElementById(id); }
+  function show(el, yes){ el.classList.toggle("hidden", !yes); }
+
+  function render(tplId, data){
+    clearInterval(countdown);
+    var frag = $(tplId).content.cloneNode(true);
+    frag.querySelectorAll("[data-f]").forEach(function(el){
+      var v = data[el.getAttribute("data-f")];
+      if (v == null || v === "") el.classList.add("hidden"); else el.textContent = v;
+    });
+    app.replaceChildren(frag);
+    window.scrollTo(0, 0);
+  }
+
+  function view(r){
+    var places = r.quantity + (r.quantity > 1 ? " places" : " place");
+    return {
+      ref:r.ref, first_name:r.first_name, full_name:r.first_name + " " + r.last_name, promo:r.promo, email:r.email,
+      amount_fmt:Brunch.fcfa(r.amount), places:places, expires_time:r.expires_at ? Brunch.time(r.expires_at) : "",
+      op_label:OPS[r.operator] || "", payer_phone:r.payer_phone, txn_id:r.txn_id, ticket_code:r.ticket_code,
+      entries:r.checked_in + " / " + r.quantity,
+      venue_name:r.venue && r.venue.name, venue_address:r.venue && r.venue.address, venue_notes:r.venue && r.venue.notes
+    };
+  }
+
+  function contactLink(){
+    var a = $("contact"); if (!a || !info || !info.contact_whatsapp) return;
+    a.href = Brunch.waLink(info.contact_whatsapp, "Bonjour, j'ai une question sur ma réservation " + resa.ref + " pour le Grand Brunch.");
+    show(a, true);
+  }
+
+  // --- Formulaire de déclaration, partagé par plusieurs états ---
+  function mountDeclare(defaultOp){
+    var form = $("declare"); if (!form) return;
+    form.appendChild($("tpl-declare").content.cloneNode(true));
+    var op = defaultOp || resa.operator;
+    if (op){ var radio = form.querySelector('input[name="d-op"][value="' + op + '"]'); if (radio) radio.checked = true; }
+    $("d-phone").value = resa.payer_phone || resa.whatsapp || "";
+    $("d-txn").value = resa.status === "declared" ? (resa.txn_id || "") : "";
+    form.addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var err = $("d-err"), chosen = form.querySelector('input[name="d-op"]:checked');
+      var phone = $("d-phone").value.replace(/[\s.\-()]/g, ""), txn = $("d-txn").value.replace(/\s/g, "");
+      var msg = !chosen ? "Choisis l'opérateur utilisé." :
+                !/^\+?\d{8,15}$/.test(phone) ? "Indique le numéro qui a envoyé le paiement." :
+                txn.length < 4 ? "Indique l'ID de transaction reçu par SMS." : "";
+      err.textContent = msg; show(err, !!msg); if (msg) return;
+      var btn = form.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Envoi…";
+      Brunch.rpc("declare_payment", {p_ref:ref, p_token:token, p_operator:chosen.value, p_payer_phone:phone, p_txn_id:txn})
+        .then(function(){ return load(); })
+        .catch(function(e){ err.textContent = Brunch.errorText(e); show(err, true); btn.disabled = false; btn.textContent = "J'ai payé, valider"; });
+    });
+  }
+
+  // --- États ---
+  function renderPay(){
+    render("tpl-pay", view(resa));
+    function pick(op){
+      var num = op === "airtel" ? info.airtel_number : info.moov_number;
+      var name = op === "airtel" ? info.airtel_name : info.moov_name;
+      $("pay-number").textContent = num || "Numéro bientôt disponible";
+      $("pay-name").textContent = name ? "Au nom de " + name : "";
+      app.querySelector('#paybox [data-f="op_label"]').textContent = OPS[op];
+      app.querySelector('#paybox [data-f="op_label"]').classList.remove("hidden");
+      var d = document.querySelector('input[name="d-op"][value="' + op + '"]'); if (d) d.checked = true;
+    }
+    var ops = app.querySelectorAll('input[name="op"]');
+    ops.forEach(function(r){ r.addEventListener("change", function(){ pick(r.value); }); });
+    var first = info.airtel_number || !info.moov_number ? "airtel" : "moov";
+    app.querySelector('input[name="op"][value="' + first + '"]').checked = true;
+    mountDeclare(first); pick(first);
+
+    app.querySelectorAll(".copy-btn").forEach(function(b){
+      b.addEventListener("click", function(){
+        var v = b.dataset.copy ? $(b.dataset.copy).textContent.replace(/\s/g, "") : b.dataset.copyValue === "amount" ? String(resa.amount) : resa.ref;
+        Brunch.copy(v).then(function(){ b.textContent = "Copié !"; setTimeout(function(){ b.textContent = "Copier"; }, 1600); });
+      });
+    });
+
+    var end = new Date(resa.expires_at);
+    function step(){
+      var ms = end - new Date();
+      if (ms <= 0){ clearInterval(countdown); load(); return; }
+      var m = Math.floor(ms / 6e4), s = Math.floor(ms % 6e4 / 1e3);
+      $("timer").textContent = (m >= 60 ? Math.floor(m / 60) + " h " + String(m % 60).padStart(2, "0") : m) + " min " + String(s).padStart(2, "0") + " s";
+    }
+    step(); countdown = setInterval(step, 1000);
+  }
+
+  function renderDeclared(){
+    render("tpl-declared", view(resa));
+    contactLink();
+    $("fix").onclick = function(){ show($("fix-card"), true); show($("fix"), false); $("d-txn").focus(); };
+    mountDeclare();
+    poll = setTimeout(function(){ load(true); }, 20000);
+  }
+
+  function renderTicket(){
+    render("tpl-ticket", view(resa));
+    $("qr").innerHTML = Ticket.qrSvg(resa.ticket_code);
+    if (resa.venue && resa.venue.name){
+      show($("venue"), true);
+      if (resa.venue.maps_url){ $("venue-map").href = resa.venue.maps_url; show($("venue-map"), true); }
+    }
+    $("pdf").onclick = function(){
+      var b = this; b.disabled = true; b.textContent = "Préparation…";
+      Ticket.downloadPdf(resa).catch(function(){ alert("Le PDF n'a pas pu être créé. Réessaie ou fais une capture d'écran du ticket."); })
+        .then(function(){ b.disabled = false; b.textContent = "Télécharger le PDF"; });
+    };
+    $("mail-note").textContent = resa.email ? "Une copie de ton ticket est envoyée à " + resa.email + "." : "";
+    if (!resa.email_sent) Brunch.sendTicket({ref:ref, token:token});
+  }
+
+  function renderProblem(){
+    var d = view(resa);
+    if (resa.status === "expired"){
+      d.title = "Délai dépassé"; d.pill = "Places libérées";
+      d.text = "Le paiement n'a pas été déclaré à temps : tes places ont été remises en vente.";
+    } else if (resa.status === "rejected"){
+      d.title = "Paiement non confirmé"; d.pill = "Refusé";
+      d.text = "L'équipe n'a pas pu confirmer ton paiement. Vérifie les informations de ton SMS et déclare-le à nouveau, ou contacte l'organisation.";
+    } else {
+      d.title = "Réservation annulée"; d.pill = "Annulée";
+      d.text = "Cette réservation a été annulée. Contacte l'organisation si c'est une erreur.";
+    }
+    render("tpl-problem", d);
+    app.querySelector(".pill").classList.add(resa.status === "rejected" ? "ko" : "off");
+    if (resa.rejected_reason){ $("reason").textContent = "Motif : " + resa.rejected_reason; show($("reason"), true); }
+    show($("new-resa"), resa.status !== "rejected" || !resa.can_redeclare);
+    if (resa.can_redeclare){ show($("redeclare-card"), true); mountDeclare(); }
+    contactLink();
+  }
+
+  function renderLookup(message){
+    clearTimeout(poll); render("tpl-lookup", {});
+    var last = Brunch.recall();
+    if (last && last.ref){ $("l-ref").value = last.ref; }
+    if (message){ $("l-err").textContent = message; show($("l-err"), true); }
+    $("lookup").addEventListener("submit", function(ev){
+      ev.preventDefault();
+      var r = $("l-ref").value.trim().toUpperCase(), tel = $("l-tel").value.replace(/[\s.\-()]/g, "");
+      if (!r || !tel){ $("l-err").textContent = "Remplis les deux champs."; show($("l-err"), true); return; }
+      Brunch.rpc("find_reservation", {p_ref:r, p_whatsapp:tel}).then(function(res){
+        if (!res){ $("l-err").textContent = "Aucune réservation ne correspond. Vérifie la référence et le numéro."; show($("l-err"), true); return; }
+        location.href = Brunch.resaUrl(res.ref, res.token);
+      }).catch(function(e){ $("l-err").textContent = Brunch.errorText(e); show($("l-err"), true); });
+    });
+  }
+
+  function load(silent){
+    clearTimeout(poll);
+    return Promise.all([Brunch.rpc("get_reservation", {p_ref:ref, p_token:token}), info ? info : Brunch.rpc("get_public_info")])
+      .then(function(res){
+        info = res[1];
+        var next = res[0];
+        if (!next){ Brunch.forget(); renderLookup("Ce lien de réservation n'est pas valide."); return; }
+        // Pendant la vérification, on ne redessine que si le statut change (évite d'effacer une saisie)
+        if (silent && resa && next.status === resa.status){ resa = next; poll = setTimeout(function(){ load(true); }, 20000); return; }
+        resa = next; Brunch.remember(ref, token);
+        if (resa.status === "pending") renderPay();
+        else if (resa.status === "declared") renderDeclared();
+        else if (resa.status === "validated") renderTicket();
+        else renderProblem();
+      })
+      .catch(function(e){
+        if (silent){ poll = setTimeout(function(){ load(true); }, 30000); return; }
+        app.innerHTML = ""; var p = document.createElement("p"); p.className = "alert ko"; p.textContent = Brunch.errorText(e); app.appendChild(p);
+      });
+  }
+
+  if (!ref || !token){
+    var last = Brunch.recall();
+    if (last && last.ref && last.token && !params.has("chercher")){ location.replace(Brunch.resaUrl(last.ref, last.token)); return; }
+    renderLookup();
+  } else load();
+})();
+</script>
+</body>
+</html>
