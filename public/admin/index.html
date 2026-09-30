@@ -507,6 +507,15 @@ dialog p{margin:0 0 14px}
     await act(async function(){ await Brunch.rpc("admin_validate", {p_id:r.id, p_note:null}); ok = true; });
     if (ok) sendTicketDialog(r);
   }
+  // Après un refus : prévenir l'invité sur WhatsApp, avec le motif et le lien pour renvoyer une capture
+  function rejectDialog(r, reason){
+    var text = "Bonjour " + r.first_name + ", nous n'avons pas pu confirmer ton paiement pour le Grand Brunch Retrouvailles (" +
+      reason.replace(/\.$/, "") + "). Tu peux renvoyer une capture de ton paiement ici : " + ticketUrl(r);
+    var wa = el("a", "btn btn-wa", "Prévenir " + r.first_name + " sur WhatsApp");
+    wa.href = Brunch.waLink(r.whatsapp, text); wa.target = "_blank"; wa.rel = "noopener";
+    ask({title:"Paiement refusé", body:[el("p", "", "Préviens " + fullName(r) + " pour qu'il ou elle renvoie une capture :"), wa,
+      el("p", "muted", "Sa page de suivi affiche déjà le motif et le bouton pour renvoyer une capture.")], ok:"Terminé", cancel:false});
+  }
   // Après validation : un seul gros bouton pour envoyer le ticket sur WhatsApp (+ e-mail automatique s'il y en a un)
   function sendTicketDialog(r){
     var wa = el("a", "btn btn-wa", "Envoyer le ticket sur WhatsApp");
@@ -521,7 +530,9 @@ dialog p{margin:0 0 14px}
     d.onclose = function(){
       if (d.returnValue !== "ok") return;
       var reason = $("rj-reason").value || $("rj-other").value.trim() || "Paiement non confirmé.";
-      act(function(){ return Brunch.rpc("admin_reject", {p_id:r.id, p_reason:reason}); });
+      var ok = false;
+      act(async function(){ await Brunch.rpc("admin_reject", {p_id:r.id, p_reason:reason}); ok = true; })
+        .then(function(){ if (ok) rejectDialog(r, reason); });
     };
     d.showModal();
   }
