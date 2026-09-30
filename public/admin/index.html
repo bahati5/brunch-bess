@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 70 50%22%3E%3Crect width=%2270%22 height=%2250%22 rx=%228%22 fill=%22%2313265C%22/%3E%3Cpath d=%22M14 38 L16 14 L27 26 L35 10 L43 26 L54 14 L56 38 Z%22 fill=%22%23F7C51E%22/%3E%3C/svg%3E">
-<title>Admin billetterie — Grand Brunch Bessieux</title>
+<link rel="icon" href="../img/logo-bessieux-96.png">
+<title>Admin billetterie — Grand Brunch Retrouvailles</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#13265C">
@@ -81,9 +81,8 @@ dialog p{margin:0 0 14px}
 <header class="mini-top">
   <div class="wrap">
     <a class="logo" href="../index.html">
-      <svg width="28" height="20" viewBox="0 0 70 50" fill="none" stroke="currentColor" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true"><path d="M6 40 L10 10 L24 26 L35 6 L46 26 L60 10 L64 40 Z"/></svg>
-      <span class="script">Bessieux</span>
-      <span class="caps">Admin</span>
+      <img src="../img/logo-bessieux-96.png" alt="" width="44" height="44">
+      <span class="txt"><span class="script">Grand Brunch</span><span class="caps">Admin</span></span>
     </a>
     <nav class="hidden" id="nav">
       <a href="scan.html">Scanner</a>
@@ -436,7 +435,7 @@ dialog p{margin:0 0 14px}
     }
     if (s === "declared") btn("Refuser", "ko", function(){ reject(r); });
     if (s === "validated"){
-      var waText = "Bonjour " + r.first_name + ", ton paiement est confirmé ! Voici ton ticket pour le Grand Brunch des retrouvailles (lieu et QR code) : " + ticketUrl(r);
+      var waText = "Bonjour " + r.first_name + ", ton paiement est confirmé ! Voici ton ticket pour le Grand Brunch Retrouvailles (lieu et QR code) : " + ticketUrl(r);
       var wa = el("a", "sbtn", "WhatsApp");
       wa.href = Brunch.waLink(r.whatsapp, waText); wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
       // Au Gabon, le compte WhatsApp peut être enregistré avec ou sans le 0 : on propose l'autre format

@@ -27,11 +27,11 @@
     doc.setFillColor.apply(doc, navy); doc.rect(0, 0, W, 62, "F");
     doc.setFillColor.apply(doc, sun); doc.rect(0, 62, W, 3, "F");
     doc.setTextColor.apply(doc, sun); doc.setFont("helvetica", "bold"); doc.setFontSize(9);
-    doc.text("BESSIEUX ALUMNI  -  PROMOS 2018 - 2019 - 2020", 14, 16, {charSpace:.6});
+    doc.text("LYCÉE MGR BESSIEUX  -  PROMOS 2018 - 2019 - 2020", 14, 16, {charSpace:.6});
     doc.setTextColor(255, 255, 255); doc.setFontSize(24);
     doc.text("GRAND BRUNCH", 14, 32);
     doc.setFont("helvetica", "normal"); doc.setFontSize(13);
-    doc.text("des retrouvailles", 14, 40);
+    doc.text("RETROUVAILLES", 14, 41, {charSpace:1.2});
     doc.setFont("helvetica", "bold"); doc.setFontSize(11);
     doc.text("Samedi 31 octobre 2026  -  à partir de 12h", 14, 53);
 

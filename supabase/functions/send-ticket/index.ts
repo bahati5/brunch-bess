@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
   const html = `<!doctype html><html lang="fr"><body style="margin:0;background:#EAF5FD;font-family:Segoe UI,Arial,sans-serif;color:#13265C">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:32px 16px">
 <table role="presentation" width="100%" style="max-width:520px;background:#fff;border-radius:16px;overflow:hidden">
-<tr><td style="background:#13265C;color:#F7C51E;padding:24px 28px;font-size:22px;font-weight:800;letter-spacing:.04em">GRAND BRUNCH · BESSIEUX ALUMNI</td></tr>
+<tr><td style="background:#13265C;color:#F7C51E;padding:24px 28px;font-size:22px;font-weight:800;letter-spacing:.04em">GRAND BRUNCH RETROUVAILLES</td></tr>
 <tr><td style="padding:28px">
 <p style="font-size:18px;margin:0 0 12px">Bonjour ${esc(r.first_name)},</p>
 <p style="margin:0 0 12px;line-height:1.55">Ton paiement de <b>${fcfa(r.amount)}</b> est confirmé. Ton ticket pour <b>${places}</b> est prêt !</p>
@@ -92,8 +92,8 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         secret: Deno.env.get("APPS_SCRIPT_SECRET"),
         to: r.email,
-        name: "Bessieux Alumni",
-        subject: "Ton ticket pour le Grand Brunch des retrouvailles",
+        name: "Grand Brunch Retrouvailles",
+        subject: "Ton ticket pour le Grand Brunch Retrouvailles",
         html,
       }),
     });

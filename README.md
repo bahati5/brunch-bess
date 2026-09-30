@@ -1,4 +1,4 @@
-# Grand Brunch des retrouvailles — billetterie
+# Grand Brunch Retrouvailles — billetterie
 
 Invitation digitale + billetterie avec paiement Airtel Money / Moov Money, sans agrégateur.
 

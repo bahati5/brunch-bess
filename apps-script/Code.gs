@@ -22,7 +22,7 @@ function doPost(e) {
     to: body.to,
     subject: body.subject,
     htmlBody: body.html,
-    name: body.name || 'Bessieux Alumni'
+    name: body.name || 'Grand Brunch Retrouvailles'
   });
   return reply({ ok: true, remaining: MailApp.getRemainingDailyQuota() });
 }
