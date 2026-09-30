@@ -461,6 +461,7 @@ dialog p{margin:0 0 14px}
       btn(s === "declared" ? "Valider" : "Valider quand même", "ok", function(){ validate(r); });
     }
     if (s === "declared") btn("Refuser", "ko", function(){ reject(r); });
+    if (s === "rejected") btn("Prévenir sur WhatsApp", "", function(){ rejectDialog(r, r.rejected_reason || "paiement non confirmé"); });
     if (s === "validated"){
       var wa = el("a", "sbtn", "WhatsApp");
       wa.href = Brunch.waLink(r.whatsapp, waTicketText(r)); wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
