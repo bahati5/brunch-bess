@@ -43,7 +43,7 @@ Tout se fait depuis les interfaces web, sans installer d'outil.
 
 ### 2. Créer la base
 1. Menu **SQL Editor** → **New query**.
-2. Coller tout le contenu de `supabase/migrations/20260930000000_billetterie.sql` → **Run**. Résultat attendu : « Success. No rows returned ».
+2. Exécuter **dans l'ordre** chaque fichier de `supabase/migrations/` (coller → **Run**) : résultat attendu « Success. No rows returned ».
 
 ### 3. Créer les comptes admin
 1. **Authentication → Users → Add user → Create new user** : e-mail + mot de passe, cocher **Auto Confirm User**.
@@ -76,6 +76,17 @@ Tout se fait depuis les interfaces web, sans installer d'outil.
    - `APPS_SCRIPT_SECRET` = la même phrase que `SECRET`
    - `SITE_URL` = l'adresse du site (ex. `https://brunch-bess.vercel.app`)
 
+### 6 bis. Notifications des admins sur téléphone
+1. SQL Editor : exécuter `supabase/migrations/20261001000000_push_admins.sql` (si pas déjà fait à l'étape 2).
+2. **Edge Functions → Deploy a new function → Via Editor**, nom `notify-admins`, coller `supabase/functions/notify-admins/index.ts` → Deploy, puis désactiver **Verify JWT**.
+3. **Edge Functions → Secrets** : ajouter `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`
+   (valeurs dans `secrets.local.txt`, fichier local non versionné ; la clé publique est aussi dans `public/assets/config.js`).
+4. Sur chaque téléphone admin : ouvrir `/admin/` → **Activer les notifications**.
+   - Android (Chrome) : accepter l'autorisation. Conseillé : menu ⋮ → « Installer l'application ».
+   - iPhone (iOS 16.4+) : Safari → Partager → « Sur l'écran d'accueil », ouvrir l'admin depuis l'icône, puis activer.
+5. Une notification de test part à l'activation. Ensuite, chaque paiement déclaré notifie tous les téléphones admin ;
+   un appui ouvre l'admin sur la réservation concernée.
+
 ### 7. Héberger le site
 Vercel : **Add New → Project** → importer `bahati5/brunch-bess` → **Deploy** (`vercel.json` publie le dossier `public`).
 Netlify fonctionne aussi (`netlify.toml`).
@@ -90,6 +101,12 @@ Pour tester avant le 1er octobre, avancer la date d'**ouverture**.
 3. Admin → **À vérifier** → **Valider** : le ticket s'affiche sur la page de suivi et l'e-mail arrive.
 4. `/admin/scan.html` sur un téléphone → scanner le QR du ticket.
 5. Pour repartir de zéro : `delete from audit_log; delete from sms_inbox; delete from reservations;` dans le SQL Editor.
+
+## Numéros de téléphone (Gabon)
+Depuis avril 2024 : national `0XX XX XX XX` (9 chiffres), international `+241` + 8 chiffres sans le 0.
+Les comptes WhatsApp gardent le format de leur création (`+241 0XX…` ou ancien `+241 0X XX XX XX`) :
+le site accepte toutes ces écritures, enregistre au format international et l'admin propose un second bouton
+WhatsApp (avec / sans le 0) si le premier ne trouve pas le contact.
 
 ## À venir
 - Réception automatique des SMS (Android : appli de transfert de SMS ; iPhone : automatisation Raccourcis)

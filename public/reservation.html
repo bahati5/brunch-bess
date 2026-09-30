@@ -36,7 +36,7 @@
   <p class="lead">Indique la référence reçue lors de ta réservation (elle commence par BB-) et ton numéro WhatsApp.</p>
   <form class="card stack" id="lookup" novalidate>
     <div><label for="l-ref">Référence</label><input id="l-ref" autocapitalize="characters" placeholder="BB-XXXXX" required></div>
-    <div><label for="l-tel">Numéro WhatsApp</label><input id="l-tel" type="tel" inputmode="tel" placeholder="+241 …" required></div>
+    <div><label for="l-tel">Numéro WhatsApp</label><input id="l-tel" type="tel" inputmode="tel" placeholder="074 67 05 66" required></div>
     <p class="alert ko hidden" id="l-err" role="alert"></p>
     <button class="btn btn-sun" type="submit">Retrouver ma réservation</button>
   </form>
@@ -90,7 +90,7 @@
       <label class="op moov"><input type="radio" name="d-op" value="moov"><span class="dot" aria-hidden="true"></span>Moov Money</label>
     </div>
   </fieldset>
-  <div><label for="d-phone">Numéro qui a envoyé le paiement</label><input id="d-phone" type="tel" inputmode="tel" required></div>
+  <div><label for="d-phone">Numéro qui a envoyé le paiement</label><input id="d-phone" type="tel" inputmode="tel" placeholder="074 67 05 66" required><p class="hint" id="d-phone-hint" aria-live="polite"></p></div>
   <div><label for="d-txn">ID de transaction <span style="font-weight:400;color:var(--muted)">(dans le SMS de confirmation)</span></label><input id="d-txn" autocapitalize="characters" autocomplete="off" spellcheck="false" required></div>
   <p class="alert ko hidden" id="d-err" role="alert"></p>
   <button class="btn btn-navy" type="submit">J'ai payé, valider</button>
@@ -212,7 +212,7 @@
     return {
       ref:r.ref, first_name:r.first_name, full_name:r.first_name + " " + r.last_name, promo:r.promo, email:r.email,
       amount_fmt:Brunch.fcfa(r.amount), places:places, expires_time:r.expires_at ? Brunch.time(r.expires_at) : "",
-      op_label:OPS[r.operator] || "", payer_phone:r.payer_phone, txn_id:r.txn_id, ticket_code:r.ticket_code,
+      op_label:OPS[r.operator] || "", payer_phone:Brunch.fmtPhone(r.payer_phone), txn_id:r.txn_id, ticket_code:r.ticket_code,
       entries:r.checked_in + " / " + r.quantity,
       venue_name:r.venue && r.venue.name, venue_address:r.venue && r.venue.address, venue_notes:r.venue && r.venue.notes
     };
@@ -230,19 +230,20 @@
     form.appendChild($("tpl-declare").content.cloneNode(true));
     var op = defaultOp || resa.operator;
     if (op){ var radio = form.querySelector('input[name="d-op"][value="' + op + '"]'); if (radio) radio.checked = true; }
-    $("d-phone").value = resa.payer_phone || resa.whatsapp || "";
+    $("d-phone").value = Brunch.fmtPhone(resa.payer_phone || resa.whatsapp || "");
+    Brunch.phonePreview($("d-phone"), $("d-phone-hint"));
     $("d-txn").value = resa.status === "declared" ? (resa.txn_id || "") : "";
     form.addEventListener("submit", function(ev){
       ev.preventDefault();
       var err = $("d-err"), chosen = form.querySelector('input[name="d-op"]:checked');
-      var phone = $("d-phone").value.replace(/[\s.\-()]/g, ""), txn = $("d-txn").value.replace(/\s/g, "");
+      var phone = Brunch.normPhone($("d-phone").value), txn = $("d-txn").value.replace(/\s/g, "");
       var msg = !chosen ? "Choisis l'opérateur utilisé." :
-                !/^\+?\d{8,15}$/.test(phone) ? "Indique le numéro qui a envoyé le paiement." :
+                Brunch.phoneError($("d-phone").value) ? "Numéro qui a payé : " + Brunch.phoneError($("d-phone").value) :
                 txn.length < 4 ? "Indique l'ID de transaction reçu par SMS." : "";
       err.textContent = msg; show(err, !!msg); if (msg) return;
       var btn = form.querySelector("button[type=submit]"); btn.disabled = true; btn.textContent = "Envoi…";
       Brunch.rpc("declare_payment", {p_ref:ref, p_token:token, p_operator:chosen.value, p_payer_phone:phone, p_txn_id:txn})
-        .then(function(){ return load(); })
+        .then(function(res){ if (res && res.status === "declared") Brunch.notifyAdmins(ref, token); return load(); })
         .catch(function(e){ err.textContent = Brunch.errorText(e); show(err, true); btn.disabled = false; btn.textContent = "J'ai payé, valider"; });
     });
   }
@@ -299,7 +300,7 @@
     }
     $("pdf").onclick = function(){
       var b = this; b.disabled = true; b.textContent = "Préparation…";
-      Ticket.downloadPdf(resa).catch(function(){ alert("Le PDF n'a pas pu être créé. Réessaie ou fais une capture d'écran du ticket."); })
+      Ticket.downloadPdf(resa).catch(function(){ $("mail-note").textContent = "Le PDF n'a pas pu être créé. Réessaie, ou fais une capture d'écran du ticket."; })
         .then(function(){ b.disabled = false; b.textContent = "Télécharger le PDF"; });
     };
     $("mail-note").textContent = resa.email ? "Une copie de ton ticket est envoyée à " + resa.email + "." : "";
@@ -333,7 +334,7 @@
     if (message){ $("l-err").textContent = message; show($("l-err"), true); }
     $("lookup").addEventListener("submit", function(ev){
       ev.preventDefault();
-      var r = $("l-ref").value.trim().toUpperCase(), tel = $("l-tel").value.replace(/[\s.\-()]/g, "");
+      var r = $("l-ref").value.trim().toUpperCase(), tel = Brunch.normPhone($("l-tel").value);
       if (!r || !tel){ $("l-err").textContent = "Remplis les deux champs."; show($("l-err"), true); return; }
       Brunch.rpc("find_reservation", {p_ref:r, p_whatsapp:tel}).then(function(res){
         if (!res){ $("l-err").textContent = "Aucune réservation ne correspond. Vérifie la référence et le numéro."; show($("l-err"), true); return; }

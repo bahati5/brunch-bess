@@ -6,6 +6,13 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 70 50%22%3E%3Crect width=%2270%22 height=%2250%22 rx=%228%22 fill=%22%2313265C%22/%3E%3Cpath d=%22M14 38 L16 14 L27 26 L35 10 L43 26 L54 14 L56 38 Z%22 fill=%22%23F7C51E%22/%3E%3C/svg%3E">
 <title>Admin billetterie — Grand Brunch Bessieux</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#13265C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Billetterie">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Anton&family=Kaushan+Script&family=Manrope:wght@400;500;600;700;800&display=swap">
@@ -54,6 +61,20 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
 .settings fieldset{border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 14px}
 .settings legend{padding:0 6px;font-weight:800;text-transform:uppercase;letter-spacing:.12em;font-size:.75rem}
 .head-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 18px}
+.ask-rows{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;margin:0 0 14px}
+.ask-rows dt{color:var(--muted);font-size:.88rem}
+.ask-rows dd{margin:0;font-weight:700;overflow-wrap:anywhere}
+.ask-txn{display:inline-block;font-family:ui-monospace,Consolas,monospace;font-size:1.1rem;letter-spacing:.04em;background:var(--sky-pale);border:1.5px solid var(--line);border-radius:10px;padding:2px 10px}
+.ask-note{margin:0 0 14px;padding:12px 14px;border-radius:12px;background:var(--sun-soft);color:#13265C;font-weight:600;font-size:.92rem}
+.ask-note.ko{background:#FDECEA;color:#8C1D18}
+dialog p{margin:0 0 14px}
+.btn-danger{background:#B3261E;color:#fff;box-shadow:0 6px 0 -1px #13265C}
+.btn-danger:hover{background:#C7362D}
+.notif-btn[data-state="on"]{background:#D6F5E3;border-color:#0F5132;color:#0F5132}
+.item.flash{animation:flash 2.6s ease}
+@keyframes flash{0%,50%{box-shadow:0 0 0 4px var(--sun)}100%{box-shadow:none}}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:90;max-width:min(560px,100% - 32px);padding:12px 18px;border-radius:14px;background:#13265C;color:#fff;font-weight:700;box-shadow:0 18px 40px -18px rgba(0,0,0,.6)}
+.toast.bad{background:#8C1D18}
 </style>
 </head>
 <body class="page">
@@ -92,6 +113,7 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
         <p class="muted" style="margin:0" id="who"></p>
       </div>
       <div class="row">
+        <button class="sbtn notif-btn" type="button" id="btn-notif">Notifications</button>
         <button class="sbtn" type="button" id="btn-add">+ Réservation manuelle</button>
         <button class="sbtn" type="button" id="btn-export">Export CSV</button>
         <button class="sbtn" type="button" id="btn-settings">Réglages</button>
@@ -119,7 +141,7 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
             <div><label for="s-airtel-name">Nom affiché (Airtel)</label><input id="s-airtel-name"></div>
             <div><label for="s-moov">Moov Money</label><input id="s-moov" type="tel"></div>
             <div><label for="s-moov-name">Nom affiché (Moov)</label><input id="s-moov-name"></div>
-            <div><label for="s-contact">WhatsApp de contact</label><input id="s-contact" type="tel" placeholder="241…"></div>
+            <div><label for="s-contact">WhatsApp de contact</label><input id="s-contact" type="tel" placeholder="074 67 05 66"></div>
           </div>
         </fieldset>
         <fieldset><legend>Lieu (révélé sur les tickets validés)</legend>
@@ -157,6 +179,34 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     <div class="row" style="margin-top:16px">
       <button class="btn btn-line" value="cancel" formnovalidate>Annuler</button>
       <button class="btn btn-navy" value="ok">Refuser</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-ask">
+  <form method="dialog" id="ask-form">
+    <h2 id="ask-title"></h2>
+    <div id="ask-body"></div>
+    <div id="ask-input-wrap" class="hidden" style="margin:0 0 14px"><label for="ask-input" id="ask-label"></label><textarea id="ask-input"></textarea></div>
+    <div class="row">
+      <button class="btn btn-line" value="cancel" id="ask-cancel" formnovalidate>Annuler</button>
+      <button class="btn btn-navy" value="ok" id="ask-ok">Confirmer</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-notif">
+  <form method="dialog">
+    <h2>Notifications sur ce téléphone</h2>
+    <p id="nt-text"></p>
+    <ol class="steps muted hidden" id="nt-steps" style="margin:0 0 14px"></ol>
+    <p class="alert ko hidden" id="nt-err" style="margin:0 0 14px"></p>
+    <p class="alert info hidden" id="nt-ok" style="margin:0 0 14px"></p>
+    <div class="row">
+      <button class="btn btn-line" value="close">Fermer</button>
+      <button class="btn btn-line hidden" type="button" id="nt-off">Désactiver</button>
+      <button class="btn btn-line hidden" type="button" id="nt-test">Envoyer un test</button>
+      <button class="btn btn-sun hidden" type="button" id="nt-on">Activer</button>
     </div>
   </form>
 </dialog>
@@ -205,6 +255,42 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     var m = Math.round((Date.now() - new Date(iso)) / 6e4);
     return m < 1 ? "à l'instant" : m < 60 ? "il y a " + m + " min" : m < 1440 ? "il y a " + Math.floor(m / 60) + " h" : Brunch.dateTime(iso);
   }
+  // Boîte de dialogue maison : résout true / texte saisi, ou null si annulé
+  function ask(o){
+    return new Promise(function(done){
+      var d = $("dlg-ask");
+      $("ask-title").textContent = o.title;
+      $("ask-body").replaceChildren.apply($("ask-body"), o.body || []);
+      show($("ask-input-wrap"), !!o.input); $("ask-input").value = "";
+      if (o.input) $("ask-label").textContent = o.input;
+      $("ask-ok").textContent = o.ok || "Confirmer";
+      $("ask-ok").className = "btn " + (o.danger ? "btn-danger" : "btn-navy");
+      $("ask-cancel").textContent = o.cancel || "Annuler";
+      show($("ask-cancel"), o.cancel !== false);
+      d.returnValue = "";
+      d.onclose = function(){ done(d.returnValue === "ok" ? (o.input ? $("ask-input").value.trim() : true) : null); };
+      d.showModal();
+    });
+  }
+  function info(title, msg){ return ask({title:title, body:[el("p", "", msg)], ok:"OK", cancel:false}); }
+  var toastTimer = null;
+  function toast(msg, bad){
+    var t = $("toast") || document.body.appendChild(Object.assign(document.createElement("div"), {id:"toast", role:"status"}));
+    t.className = "toast" + (bad ? " bad" : ""); t.textContent = msg; t.hidden = false;
+    clearTimeout(toastTimer); toastTimer = setTimeout(function(){ t.hidden = true; }, bad ? 9000 : 4000);
+  }
+  // Appelle une Edge Function et renvoie son JSON, y compris en cas d'erreur HTTP
+  async function invoke(name, body){
+    var res = await sb.functions.invoke(name, {body:body});
+    if (!res.error) return res.data || {};
+    try { return await res.error.context.json(); } catch(e){ return {error:res.error.message}; }
+  }
+  function mailMsg(d){
+    if (d.sent) return ["E-mail du ticket envoyé.", false];
+    if (d.reason === "already_sent") return ["E-mail déjà envoyé.", false];
+    if (d.reason === "no_email") return ["Pas d'e-mail pour cette réservation.", false];
+    return ["Échec de l'e-mail : " + (d.detail || d.reason || d.error || "erreur inconnue"), true];
+  }
   function ticketUrl(r){ return SITE + Brunch.resaUrl(r.ref, r.access_token); }
   function isActive(r){ return r.status === "validated" || r.status === "declared" || (r.status === "pending" && new Date(r.expires_at) > new Date()); }
   function effStatus(r){ return r.status === "pending" && new Date(r.expires_at) <= new Date() ? "expired" : r.status; }
@@ -222,6 +308,7 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     show($("login-view"), false); show($("dash-view"), true); show($("nav"), true);
     await refresh();
     timer = setInterval(refresh, 30000);
+    if (navigator.serviceWorker) navigator.serviceWorker.ready.then(resyncPush);
   }
   function showLogin(msg){
     clearInterval(timer);
@@ -246,7 +333,21 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     if (res[0].error){ if (res[0].error.code === "PGRST301") return showLogin("Session expirée."); return; }
     rows = res[0].data; settings = res[1].data; sms = res[2].data || [];
     renderStats(); renderTabs(); renderList();
+    focusRef();
   }
+  // Met en évidence la réservation indiquée dans l'adresse (#BB-XXXXX), par ex. depuis une notification
+  function focusRef(){
+    var ref = decodeURIComponent(location.hash.slice(1)).toUpperCase();
+    if (!/^BB-[A-Z0-9]{5}$/.test(ref)) return;
+    var r = rows.find(function(x){ return x.ref === ref; }); if (!r) return;
+    history.replaceState(null, "", location.pathname);
+    $("search").value = ""; filter = TABS.find(function(t){ return t[0] !== "all" && inTab(r, t[0]); })[0];
+    renderTabs(); renderList();
+    var box = $("r-" + ref); if (!box) return;
+    box.scrollIntoView({behavior:"smooth", block:"center"}); box.classList.add("flash");
+  }
+  window.addEventListener("hashchange", function(){ if (rows.length) focusRef(); });
+  document.addEventListener("visibilitychange", function(){ if (!document.hidden && me) refresh(); });
 
   function renderStats(){
     var sum = function(f){ return rows.filter(f).reduce(function(a, r){ return a + r.quantity; }, 0); };
@@ -287,7 +388,10 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     var q = $("search").value.trim().toLowerCase();
     var list = rows.filter(function(r){ return inTab(r, filter); }).filter(function(r){
       if (!q) return true;
-      return [r.ref, r.first_name, r.last_name, r.whatsapp, r.email, r.payer_phone, r.txn_id, r.promo].join(" ").toLowerCase().indexOf(q) >= 0;
+      var local = function(v){ var d = String(v || "").replace(/\D/g, ""); return d.indexOf("241") === 0 ? "0" + d.slice(3) + " " + d : d; };
+      var qd = q.replace(/[\s.\-]/g, "");
+      return [r.ref, r.first_name, r.last_name, r.email, r.txn_id, r.promo].join(" ").toLowerCase().indexOf(q) >= 0
+        || (/^\+?\d{4,}$/.test(qd) && (local(r.whatsapp) + " " + local(r.payer_phone)).indexOf(qd.replace("+", "")) >= 0);
     });
     if (filter === "declared") list.sort(function(a, b){ return new Date(a.declared_at) - new Date(b.declared_at); });
     if (!list.length){ $("list").replaceChildren(el("div", "empty", q ? "Aucun résultat." : "Rien ici pour le moment.")); return; }
@@ -296,12 +400,12 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
 
   function item(r){
     var s = effStatus(r), st = STATUS[s];
-    var box = el("article", "item" + (s === "declared" ? " declared" : ""));
+    var box = el("article", "item" + (s === "declared" ? " declared" : "")); box.id = "r-" + r.ref;
 
     var who = el("div");
     var h = el("h3", "", r.first_name + " " + r.last_name + " ");
     var pill = el("span", "pill " + st[1], st[0]); pill.style.marginLeft = "6px"; h.append(pill);
-    who.append(h, el("p", "meta", r.ref + " · Promo " + r.promo + " · " + r.whatsapp + (r.email ? " · " + r.email : "")),
+    who.append(h, el("p", "meta", r.ref + " · Promo " + r.promo + " · " + Brunch.fmtPhone(r.whatsapp) + (r.email ? " · " + r.email : "")),
                el("p", "meta", "Réservé " + ago(r.created_at) + (r.message ? " · « " + r.message + " »" : "")));
 
     var pay = el("div", "pay");
@@ -310,7 +414,7 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
       pay.append(l1);
     }
     if (r.txn_id){
-      pay.append(el("div", "", OPS[r.operator] + " depuis " + r.payer_phone));
+      pay.append(el("div", "", OPS[r.operator] + " depuis " + Brunch.fmtPhone(r.payer_phone)));
       var l3 = el("div", "", "ID : "); l3.append(el("b", "", r.txn_id)); pay.append(l3);
       if (r.declared_at) pay.append(el("div", "meta", "Déclaré " + ago(r.declared_at)));
       if (s === "declared"){
@@ -331,15 +435,20 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     }
     if (s === "declared") btn("Refuser", "ko", function(){ reject(r); });
     if (s === "validated"){
+      var waText = "Bonjour " + r.first_name + ", ton paiement est confirmé ! Voici ton ticket pour le Grand Brunch des retrouvailles (lieu et QR code) : " + ticketUrl(r);
       var wa = el("a", "sbtn", "WhatsApp");
-      wa.href = Brunch.waLink(r.whatsapp, "Bonjour " + r.first_name + ", ton paiement est confirmé ! Voici ton ticket pour le Grand Brunch des retrouvailles (lieu et QR code) : " + ticketUrl(r));
-      wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
+      wa.href = Brunch.waLink(r.whatsapp, waText); wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
+      // Au Gabon, le compte WhatsApp peut être enregistré avec ou sans le 0 : on propose l'autre format
+      var alt = Brunch.waAlt(r.whatsapp);
+      if (alt){
+        var wa2 = el("a", "sbtn", alt.indexOf("2410") === 0 ? "WhatsApp avec le 0" : "WhatsApp sans le 0");
+        wa2.href = Brunch.waLink(alt, waText); wa2.target = "_blank"; wa2.rel = "noopener";
+        wa2.title = "Si le premier bouton ne trouve pas le contact : +" + alt; acts.append(wa2);
+      }
       btn("Copier le lien", "", function(){ var b = this; Brunch.copy(ticketUrl(r)).then(function(){ b.textContent = "Copié !"; }); });
       if (r.email) btn(r.email_sent_at ? "Renvoyer l'e-mail" : "Envoyer l'e-mail", "", function(){
-        var b = this; b.disabled = true;
-        sb.functions.invoke("send-ticket", {body:{id:r.id, resend:true}}).then(function(res){
-          b.textContent = res.data && res.data.sent ? "E-mail envoyé" : "Échec de l'envoi"; refresh();
-        });
+        var b = this; b.disabled = true; b.textContent = "Envoi…";
+        invoke("send-ticket", {id:r.id, resend:true}).then(function(d){ var m = mailMsg(d); toast(m[0], m[1]); refresh(); });
       });
     }
     if (s !== "cancelled" && s !== "absent" && r.checked_in === 0) btn("Annuler", "ko", function(){ cancel(r); });
@@ -350,17 +459,32 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
 
   // ---------- Actions ----------
   async function act(fn){
-    try { await fn(); } catch(e){ alert(adminErr(e)); }
+    try { await fn(); } catch(e){ await info("Action impossible", adminErr(e)); }
     await refresh();
   }
-  function validate(r){
-    var msg = "Valider " + r.first_name + " " + r.last_name + " (" + r.quantity + " place(s), " + Brunch.fcfa(r.amount) + ") ?";
-    if (r.txn_id) msg += "\n\nVérifie d'abord sur le téléphone : SMS " + OPS[r.operator] + " de " + r.payer_phone + ", ID " + r.txn_id + ".";
-    if (!isActive(r)) msg += "\n\nAttention : ces places n'étaient plus bloquées. Vérifie qu'il en reste.";
-    if (!confirm(msg)) return;
+  async function validate(r){
+    var dl = el("dl", "ask-rows");
+    function line(k, v, cls){ dl.append(el("dt", "", k)); var dd = el("dd"); if (cls) dd.append(el("span", cls, v)); else dd.textContent = v; dl.append(dd); }
+    line("Invité", r.first_name + " " + r.last_name + " · promo " + r.promo);
+    line("Places", String(r.quantity));
+    line("Montant", Brunch.fcfa(r.amount));
+    if (r.txn_id){
+      line("Opérateur", OPS[r.operator] + " Money");
+      line("Payé depuis", Brunch.fmtPhone(r.payer_phone));
+      line("ID transaction", r.txn_id, "ask-txn");
+    }
+    var body = [dl];
+    body.push(el("p", "ask-note", r.txn_id
+      ? "Ouvre les SMS " + OPS[r.operator] + " Money du téléphone de réception : le montant et l'ID doivent correspondre exactement."
+      : "Aucun paiement déclaré : valide seulement si l'argent a bien été reçu."));
+    var m = smsFor(r);
+    if (m && m.amount !== r.amount) body.push(el("p", "ask-note ko", "Le SMS reçu indique " + Brunch.fcfa(m.amount) + " au lieu de " + Brunch.fcfa(r.amount) + "."));
+    if (!isActive(r)) body.push(el("p", "ask-note ko", "Ces places n'étaient plus bloquées : vérifie qu'il en reste avant de valider."));
+    if (!(await ask({title:"Valider le paiement ?", body:body, ok:"Valider le paiement"}))) return;
     act(async function(){
       await Brunch.rpc("admin_validate", {p_id:r.id, p_note:null});
-      Brunch.sendTicket({ref:r.ref, token:r.access_token});
+      if (r.email) invoke("send-ticket", {ref:r.ref, token:r.access_token}).then(function(d){ var mm = mailMsg(d); toast(mm[0], mm[1]); });
+      else toast("Réservation validée. Pas d'e-mail : envoie le ticket par WhatsApp.");
     });
   }
   function reject(r){
@@ -374,8 +498,13 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     d.showModal();
   }
   $("rj-reason").onchange = function(){ show($("rj-other"), !this.value); };
-  function cancel(r){
-    var reason = prompt("Annuler la réservation " + r.ref + " de " + r.first_name + " " + r.last_name + " ?\nMotif (facultatif) :", "");
+  async function cancel(r){
+    var reason = await ask({
+      title:"Annuler la réservation ?",
+      body:[el("p", "", r.ref + " · " + r.first_name + " " + r.last_name + " · " + r.quantity + (r.quantity > 1 ? " places" : " place") + ". " +
+        (r.status === "validated" ? "Le ticket ne sera plus valable à l'entrée." : "Les places seront remises en vente."))],
+      input:"Motif (facultatif)", ok:"Annuler la réservation", cancel:"Retour", danger:true
+    });
     if (reason === null) return;
     act(function(){ return Brunch.rpc("admin_cancel", {p_id:r.id, p_reason:reason}); });
   }
@@ -386,14 +515,15 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     ev.preventDefault();
     var v = function(id){ return $(id).value.trim(); };
     var qty = parseInt(v("a-qty"), 10);
-    if (!v("a-nom") || !v("a-prenom") || !/^\+?\d{8,15}$/.test(v("a-tel").replace(/[\s.\-()]/g, "")) || !(qty > 0)){
-      $("a-err").textContent = "Remplis nom, prénom, un numéro valide et le nombre de places."; show($("a-err"), true); return;
+    var telErr = Brunch.phoneError(v("a-tel"));
+    if (!v("a-nom") || !v("a-prenom") || telErr || !(qty > 0)){
+      $("a-err").textContent = telErr ? "WhatsApp : " + telErr : "Remplis nom, prénom et le nombre de places."; show($("a-err"), true); return;
     }
     try {
       var res = await Brunch.rpc("admin_create_reservation", {p_last_name:v("a-nom"), p_first_name:v("a-prenom"), p_promo:v("a-promo"),
-        p_whatsapp:v("a-tel").replace(/[\s.\-()]/g, ""), p_email:v("a-email") || null, p_quantity:qty, p_note:v("a-note") || null});
+        p_whatsapp:Brunch.normPhone(v("a-tel")), p_email:v("a-email") || null, p_quantity:qty, p_note:v("a-note") || null});
       $("dlg-add").close();
-      if (v("a-email")) Brunch.sendTicket({ref:res.ref, token:res.token});
+      if (v("a-email")) invoke("send-ticket", {ref:res.ref, token:res.token}).then(function(d){ var m = mailMsg(d); toast(m[0], m[1]); });
       filter = "validated"; await refresh();
     } catch(e){ $("a-err").textContent = adminErr(e); show($("a-err"), true); }
   });
@@ -419,8 +549,9 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     var p = {};
     Object.keys(MAP).forEach(function(id){ p[MAP[id]] = $(id).value.trim(); });
     ["capacity","price","hold_minutes"].forEach(function(k){ if (p[k] === "") delete p[k]; });
+    if (p.contact_whatsapp) p.contact_whatsapp = Brunch.normPhone(p.contact_whatsapp);
     p.opening_at = fromLocal($("s-opening").value); p.closing_at = fromLocal($("s-closing").value);
-    Brunch.rpc("admin_update_settings", {p:p}).then(function(){ $("settings").classList.remove("show"); refresh(); })
+    Brunch.rpc("admin_update_settings", {p:p}).then(function(){ $("settings").classList.remove("show"); toast("Réglages enregistrés."); refresh(); })
       .catch(function(e){ $("s-err").textContent = adminErr(e); show($("s-err"), true); });
   });
 
@@ -438,6 +569,85 @@ dialog h2{margin:0 0 12px;font-weight:800;font-size:1.1rem}
     a.download = "reservations-brunch-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
   };
+
+  // ---------- Notifications push ----------
+  var VAPID = (window.BRUNCH_CONFIG || {}).VAPID_PUBLIC_KEY, swReg = null;
+  function isIOS(){ return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }
+  function standalone(){ return window.matchMedia("(display-mode: standalone)").matches || navigator.standalone === true; }
+  function pushSupported(){ return "serviceWorker" in navigator && "PushManager" in window && "Notification" in window; }
+  function b64ToBytes(b64){
+    var s = atob((b64 + "===".slice((b64.length + 3) % 4)).replace(/-/g, "+").replace(/_/g, "/"));
+    return Uint8Array.from(s, function(c){ return c.charCodeAt(0); });
+  }
+  function deviceName(){
+    var ua = navigator.userAgent;
+    var os = /iPhone|iPad/.test(ua) ? "iPhone" : /Android/.test(ua) ? "Android" : /Windows/.test(ua) ? "Windows" : /Mac/.test(ua) ? "Mac" : "Appareil";
+    return os + (standalone() ? " (appli)" : "") + " · " + (me || "");
+  }
+  async function currentSub(){ return swReg ? swReg.pushManager.getSubscription() : null; }
+  async function notifState(){
+    if (!VAPID) return "noconfig";
+    if (!pushSupported()) return isIOS() && !standalone() ? "ios-install" : "unsupported";
+    if (!swReg) return "loading";
+    if (Notification.permission === "denied") return "denied";
+    return (await currentSub()) ? "on" : "off";
+  }
+  async function updateNotifBtn(){
+    var st = await notifState(), b = $("btn-notif");
+    b.dataset.state = st; b.textContent = st === "on" ? "Notifications activées" : "Activer les notifications";
+  }
+  async function openNotif(){
+    var st = await notifState(), steps = [];
+    show($("nt-err"), false); show($("nt-ok"), false);
+    var text = {
+      noconfig:"La clé VAPID_PUBLIC_KEY n'est pas encore renseignée dans assets/config.js.",
+      loading:"Préparation… réessaie dans un instant.",
+      unsupported:"Ce navigateur ne gère pas les notifications. Sur Android, ouvre l'admin dans Chrome.",
+      denied:"Les notifications sont bloquées pour ce site. Réactive-les dans les réglages du navigateur (cadenas à gauche de l'adresse → Notifications → Autoriser), puis reviens ici.",
+      "ios-install":"Sur iPhone, les notifications ne marchent que si l'admin est installé comme une appli (iOS 16.4 ou plus récent) :",
+      off:"Reçois une alerte sur ce téléphone à chaque paiement déclaré, même quand l'admin est fermé. À activer sur chaque téléphone admin.",
+      on:"Ce téléphone reçoit une alerte à chaque paiement déclaré."
+    }[st];
+    if (st === "ios-install") steps = ["Ouvre cette page dans Safari.", "Touche le bouton Partager (carré avec une flèche).", "Choisis « Sur l'écran d'accueil », puis « Ajouter ».", "Ouvre l'admin depuis la nouvelle icône « Billetterie », connecte-toi et reviens ici."];
+    if (st === "off" && !standalone()) steps = [isIOS() ? "Pense à garder l'admin sur l'écran d'accueil." : "Astuce : installe l'admin sur l'écran d'accueil (menu ⋮ → « Installer l'application ») pour l'ouvrir en un geste."];
+    $("nt-text").textContent = text;
+    $("nt-steps").replaceChildren.apply($("nt-steps"), steps.map(function(x){ return el("li", "", x); }));
+    show($("nt-steps"), steps.length > 0);
+    show($("nt-on"), st === "off"); show($("nt-test"), st === "on"); show($("nt-off"), st === "on");
+    if (!$("dlg-notif").open) $("dlg-notif").showModal();
+  }
+  async function saveSub(sub){ await Brunch.rpc("admin_save_push", {p_sub:sub.toJSON(), p_device:deviceName()}); }
+  async function testNotif(){
+    var d = await invoke("notify-admins", {test:true});
+    if (d.sent > 0){ $("nt-ok").textContent = "Notification de test envoyée à " + d.sent + " appareil(s). Elle doit apparaître dans quelques secondes."; show($("nt-ok"), true); }
+    else { $("nt-err").textContent = "Aucune notification envoyée" + (d.error ? " : " + d.error : d.devices === 0 ? " : aucun appareil enregistré pour ton compte." : "."); show($("nt-err"), true); }
+  }
+  $("btn-notif").onclick = openNotif;
+  $("nt-on").onclick = async function(){
+    var b = this; b.disabled = true; show($("nt-err"), false);
+    try {
+      if (await Notification.requestPermission() !== "granted") throw new Error("Autorisation refusée.");
+      var sub = await swReg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(VAPID)});
+      await saveSub(sub); await updateNotifBtn(); await openNotif(); await testNotif();
+    } catch(e){ $("nt-err").textContent = "Activation impossible : " + (e.hint || e.message || e); show($("nt-err"), true); await updateNotifBtn(); }
+    b.disabled = false;
+  };
+  $("nt-test").onclick = async function(){ this.disabled = true; show($("nt-err"), false); show($("nt-ok"), false); await testNotif(); this.disabled = false; };
+  $("nt-off").onclick = async function(){
+    var sub = await currentSub();
+    if (sub){ await Brunch.rpc("admin_delete_push", {p_endpoint:sub.endpoint}).catch(function(){}); await sub.unsubscribe(); }
+    await updateNotifBtn(); openNotif();
+  };
+  if ("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").then(function(reg){ swReg = reg; return navigator.serviceWorker.ready; })
+      .then(function(){ updateNotifBtn(); }).catch(function(){ updateNotifBtn(); });
+    // Clic sur une notification alors que l'admin est déjà ouvert
+    navigator.serviceWorker.addEventListener("message", function(e){
+      if (e.data && e.data.type === "open"){ location.hash = new URL(e.data.url).hash; refresh(); }
+    });
+  } else updateNotifBtn();
+  // Réenregistre l'abonnement de cet appareil à chaque connexion (il peut changer ou avoir été supprimé)
+  async function resyncPush(){ try { var sub = await currentSub(); if (sub) await saveSub(sub); } catch(e){} }
 
   $("search").addEventListener("input", renderList);
   boot();

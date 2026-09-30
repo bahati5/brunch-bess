@@ -37,10 +37,63 @@
     return sb.functions.invoke("send-ticket", {body:body}).catch(function(){});
   }
 
+  // Prévient les téléphones des admins d'un paiement déclaré (idempotent côté serveur)
+  function notifyAdmins(ref, token){
+    if (!sb) return Promise.resolve();
+    return sb.functions.invoke("notify-admins", {body:{ref:ref, token:token}}).catch(function(){});
+  }
+
   // Mémorise la dernière réservation sur cet appareil (confort uniquement)
   function remember(ref, token){ try { localStorage.setItem(STORE, JSON.stringify({ref:ref, token:token})); } catch(e){} }
   function recall(){ try { return JSON.parse(localStorage.getItem(STORE) || "null"); } catch(e){ return null; } }
   function forget(){ try { localStorage.removeItem(STORE); } catch(e){} }
+
+  // Numéros de téléphone
+  // Gabon (+241) depuis avril 2024 : national « 0XX XX XX XX » (9 chiffres), international « +241 » + 8 chiffres sans le 0.
+  // Mais les comptes WhatsApp gardent le format de leur création : « +241 0XX… » (0 conservé) ou ancien « +241 0X XX XX XX ».
+  // On accepte toutes ces écritures, on enregistre au format international, et l'admin peut essayer l'autre format.
+  function normPhone(v){
+    var s = String(v || "").trim().replace(/[^\d+]/g, "");
+    if (s.indexOf("00") === 0) s = "+" + s.slice(2);
+    if (s.charAt(0) === "+") return s;
+    if (s.indexOf("241") === 0 && s.length >= 11) return "+" + s;
+    if (/^0\d{8}$/.test(s)) return "+241" + s.slice(1);   // 074670566  → +24174670566 (format officiel)
+    if (/^0\d{7}$/.test(s)) return "+241" + s;            // 04670566   → +24104670566 (ancien format WhatsApp)
+    if (/^[1-9]\d{7}$/.test(s)) return "+241" + s;        // 74670566   → +24174670566
+    return s;
+  }
+  function phoneError(v){
+    var s = normPhone(v);
+    if (!s) return "Indique un numéro.";
+    if (s.charAt(0) !== "+") return "Numéro incomplet : tape-le comme dans WhatsApp, par exemple 074 67 05 66 ou +33 6 12 34 56 78.";
+    if (s.indexOf("+241") === 0 && !/^\+241(\d{8}|0\d{8})$/.test(s)) return "Un numéro gabonais a 9 chiffres : 0XX XX XX XX.";
+    if (!/^\+\d{8,15}$/.test(s)) return "Ce numéro n'a pas le bon nombre de chiffres.";
+    return "";
+  }
+  function group(x){ var out = []; if (x.length % 2){ out.push(x.slice(0, 3)); x = x.slice(3); } for (var i = 0; i < x.length; i += 2) out.push(x.slice(i, i + 2)); return out.join(" "); }
+  function fmtPhone(v){
+    var d = String(v || "").replace(/\D/g, "");
+    if (!d) return "";
+    if (d.indexOf("241") === 0) return "+241 " + group(d.slice(3));
+    if (d.indexOf("33") === 0 && d.length === 11) return "+33 " + d.slice(2, 3) + " " + group(d.slice(3));
+    return (String(v).trim().charAt(0) === "+" ? "+" : "") + group(d);
+  }
+  // Autre écriture WhatsApp d'un numéro gabonais (avec / sans le 0), ou null
+  function waAlt(v){
+    var d = String(v || "").replace(/\D/g, "");
+    if (/^241[1-9]\d{7}$/.test(d)) return "2410" + d.slice(3);
+    if (/^2410\d{8}$/.test(d)) return "241" + d.slice(4);
+    return null;
+  }
+  // Aperçu sous un champ téléphone : montre le numéro tel qu'il sera enregistré
+  function phonePreview(input, out){
+    function upd(){
+      var v = input.value.trim(), err = v ? phoneError(v) : "";
+      out.textContent = !v ? "" : err ? err : "Numéro enregistré : " + fmtPhone(normPhone(v));
+      out.classList.toggle("bad", !!err);
+    }
+    input.addEventListener("input", upd); input.addEventListener("blur", upd); upd();
+  }
 
   function resaUrl(ref, token){ return "reservation.html?r=" + encodeURIComponent(ref) + "&t=" + encodeURIComponent(token); }
 
@@ -57,5 +110,6 @@
   }
 
   window.Brunch = {sb:sb, configured:configured, TZ:TZ, fcfa:fcfa, dateTime:dateTime, time:time, errorText:errorText,
-    rpc:rpc, sendTicket:sendTicket, remember:remember, recall:recall, forget:forget, resaUrl:resaUrl, waLink:waLink, copy:copy};
+    rpc:rpc, sendTicket:sendTicket, remember:remember, recall:recall, forget:forget, resaUrl:resaUrl, waLink:waLink, copy:copy,
+    normPhone:normPhone, phoneError:phoneError, fmtPhone:fmtPhone, waAlt:waAlt, phonePreview:phonePreview, notifyAdmins:notifyAdmins};
 })();

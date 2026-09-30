@@ -286,7 +286,7 @@ great people !</span>
         <div><label for="prenom">Prénom <span class="req" aria-hidden="true">*</span></label><input id="prenom" autocomplete="given-name" maxlength="80" required><p class="err" id="err-prenom"></p></div>
         <div><label for="promo">Promotion <span class="req" aria-hidden="true">*</span></label>
           <select id="promo" required><option value="">Choisis ta promo</option><option>2018</option><option>2019</option><option>2020</option></select><p class="err" id="err-promo"></p></div>
-        <div><label for="tel">Numéro WhatsApp <span class="req" aria-hidden="true">*</span></label><input id="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="+241 …" required><p class="err" id="err-tel"></p></div>
+        <div><label for="tel">Numéro WhatsApp <span class="req" aria-hidden="true">*</span> <span style="font-weight:400;color:var(--muted)">(tel qu'il apparaît dans WhatsApp)</span></label><input id="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="074 67 05 66" required><p class="hint" id="tel-hint" aria-live="polite"></p><p class="err" id="err-tel"></p></div>
         <div class="full" id="email-block"><label for="email">E-mail <span class="req" aria-hidden="true">*</span> <span style="font-weight:400;color:var(--muted)">(pour recevoir ton ticket)</span></label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.com" required><p class="err" id="err-email"></p></div>
         <fieldset class="full">
           <legend>Ta réponse</legend>
@@ -480,6 +480,7 @@ great people !</span>
   });
 
   var form = $("form"), done = $("done"), alertBox = $("form-alert"), sending = false;
+  if (window.Brunch) Brunch.phonePreview($("tel"), $("tel-hint"));
   function val(id){ return $(id).value.trim(); }
   function setErr(id, msg){
     var el = $(id); $("err-"+id).textContent = msg || "";
@@ -498,8 +499,8 @@ great people !</span>
     [["nom","Indique ton nom."],["prenom","Indique ton prénom."],["promo","Choisis ta promotion."]].forEach(function(f){
       var good = setErr(f[0], val(f[0]) ? "" : f[1]); if (!good && !first) first = f[0]; ok = ok && good;
     });
-    var tel = val("tel").replace(/[\s.\-()]/g,"");
-    if (!setErr("tel", /^\+?\d{8,15}$/.test(tel) ? "" : "Indique un numéro WhatsApp valide, par exemple +241 77 12 34 56.")){ ok = false; if (!first) first = "tel"; }
+    var tel = Brunch.normPhone(val("tel"));
+    if (!setErr("tel", Brunch.phoneError(val("tel")))){ ok = false; if (!first) first = "tel"; }
     if (yes && !setErr("email", /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val("email")) ? "" : "Indique un e-mail valide : ton ticket y sera envoyé.")){ ok = false; if (!first) first = "email"; }
     if (!ok){ $(first).focus(); return; }
 

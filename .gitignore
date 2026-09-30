@@ -5,3 +5,4 @@ Thumbs.db
 .netlify
 .env
 supabase/.temp/
+secrets.local.txt

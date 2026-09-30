@@ -50,7 +50,8 @@ Deno.serve(async (req) => {
     return json({ error: "params" }, 400);
   }
 
-  const { data: r } = await query.maybeSingle();
+  const { data: r, error: dbError } = await query.maybeSingle();
+  if (dbError) return json({ sent: false, reason: "db", detail: dbError.message }, 500);
   if (!r) return json({ sent: false, reason: "not_validated" });
   if (!r.email) return json({ sent: false, reason: "no_email" });
 
@@ -81,20 +82,33 @@ Deno.serve(async (req) => {
 </table></td></tr></table></body></html>`;
 
   // Apps Script répond par une redirection (302) vers le résultat : fetch la suit automatiquement
-  const res = await fetch(Deno.env.get("APPS_SCRIPT_URL")!, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" },
-    body: JSON.stringify({
-      secret: Deno.env.get("APPS_SCRIPT_SECRET"),
-      to: r.email,
-      name: "Bessieux Alumni",
-      subject: "Ton ticket pour le Grand Brunch des retrouvailles",
-      html,
-    }),
-  });
-  const out = await res.json().catch(() => ({ ok: false, error: "reponse" }));
+  let out: { ok?: boolean; error?: string } = {};
+  try {
+    const url = Deno.env.get("APPS_SCRIPT_URL") ?? "";
+    if (!/^https:\/\/script\.google\.com\/macros\/s\/.+\/exec$/.test(url)) throw new Error("APPS_SCRIPT_URL invalide (doit finir par /exec)");
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({
+        secret: Deno.env.get("APPS_SCRIPT_SECRET"),
+        to: r.email,
+        name: "Bessieux Alumni",
+        subject: "Ton ticket pour le Grand Brunch des retrouvailles",
+        html,
+      }),
+    });
+    const text = await res.text();
+    try { out = JSON.parse(text); }
+    catch {
+      // Une page HTML = le déploiement n'est pas accessible à « Tout le monde » ou l'URL est fausse
+      out = { ok: false, error: `réponse non JSON (HTTP ${res.status}) : ${text.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 160)}` };
+    }
+  } catch (e) {
+    out = { ok: false, error: String((e as Error).message ?? e) };
+  }
 
-  if (!res.ok || !out.ok) {
+  if (!out.ok) {
+    console.error("send-ticket", r.ref, out.error);
     // Échec : on libère le verrou pour qu'un prochain appel retente l'envoi
     if (!force) await db.from("reservations").update({ email_sent_at: null }).eq("id", r.id);
     return json({ sent: false, reason: "provider", detail: out.error }, 502);

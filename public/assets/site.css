@@ -367,3 +367,8 @@ footer .motto{font-size:1.5rem;color:var(--sun);margin:0}
   .js .stroke path{stroke-dashoffset:0 !important}
   .marquee .track{transform:none}
 }
+.hint{margin:5px 0 0;font-size:.85rem;color:var(--muted);font-weight:600}
+.hint:empty{display:none}
+.hint.bad{color:#B3261E}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .hint.bad{color:#FF9C92}}
+[data-theme="dark"] .hint.bad{color:#FF9C92}
