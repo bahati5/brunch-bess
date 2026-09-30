@@ -47,11 +47,13 @@ Tout se fait depuis les interfaces web, sans installer d'outil.
 
 ### 3. Créer les comptes admin
 1. **Authentication → Users → Add user → Create new user** : e-mail + mot de passe, cocher **Auto Confirm User**.
-2. Copier l'**UID** du compte créé, puis dans **SQL Editor** :
+2. Dans **SQL Editor**, en remplaçant l'e-mail et le prénom :
    ```sql
-   insert into admins (user_id, name) values ('<UID>', 'Prénom');
+   insert into admins (user_id, name)
+   select id, 'Prénom' from auth.users where email = 'admin@exemple.com';
    ```
-3. Répéter pour chaque admin.
+   Résultat attendu : « 1 row ». « 0 rows » = aucun compte avec cet e-mail.
+3. Répéter pour chaque admin. Vérifier : `select a.name, u.email from admins a join auth.users u on u.id = a.user_id;`
 4. **Authentication → Sign In / Providers** : désactiver **Allow new users to sign up** (seuls les comptes créés à la main peuvent se connecter).
 
 ### 4. Brancher le site
