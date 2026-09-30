@@ -49,23 +49,23 @@
   function forget(){ try { localStorage.removeItem(STORE); } catch(e){} }
 
   // Numéros de téléphone
-  // Gabon (+241) depuis avril 2024 : national « 0XX XX XX XX » (9 chiffres), international « +241 » + 8 chiffres sans le 0.
-  // Mais les comptes WhatsApp gardent le format de leur création : « +241 0XX… » (0 conservé) ou ancien « +241 0X XX XX XX ».
-  // On accepte toutes ces écritures, on enregistre au format international, et l'admin peut essayer l'autre format.
+  // Gabon (+241) : les comptes WhatsApp gardent le format de leur création, souvent avec le 0
+  // (« +241 0XX XX XX XX ») ou l'ancien numéro à 8 chiffres (« +241 0X XX XX XX »).
+  // Aucun site ne peut vérifier le bon format : on garde donc le numéro tel que l'invité le tape
+  // (recopié depuis son profil WhatsApp) en ajoutant seulement l'indicatif, pour un seul bouton WhatsApp fiable.
   function normPhone(v){
     var s = String(v || "").trim().replace(/[^\d+]/g, "");
     if (s.indexOf("00") === 0) s = "+" + s.slice(2);
     if (s.charAt(0) === "+") return s;
     if (s.indexOf("241") === 0 && s.length >= 11) return "+" + s;
-    if (/^0\d{8}$/.test(s)) return "+241" + s.slice(1);   // 074670566  → +24174670566 (format officiel)
-    if (/^0\d{7}$/.test(s)) return "+241" + s;            // 04670566   → +24104670566 (ancien format WhatsApp)
-    if (/^[1-9]\d{7}$/.test(s)) return "+241" + s;        // 74670566   → +24174670566
+    if (/^0\d{7,8}$/.test(s)) return "+241" + s;          // 0XXXXXXXX → +2410XXXXXXXX · 0XXXXXXX → +2410XXXXXXX
+    if (/^[1-9]\d{7}$/.test(s)) return "+241" + s;        // XXXXXXXX   → +241XXXXXXXX
     return s;
   }
   function phoneError(v){
     var s = normPhone(v);
     if (!s) return "Indique un numéro.";
-    if (s.charAt(0) !== "+") return "Numéro incomplet : tape-le comme dans WhatsApp, par exemple 074 67 05 66 ou +33 6 12 34 56 78.";
+    if (s.charAt(0) !== "+") return "Numéro incomplet : tape-le comme dans WhatsApp, par exemple 0XX XX XX XX ou +33 6 12 34 56 78.";
     if (s.indexOf("+241") === 0 && !/^\+241(\d{8}|0\d{8})$/.test(s)) return "Un numéro gabonais a 9 chiffres : 0XX XX XX XX.";
     if (!/^\+\d{8,15}$/.test(s)) return "Ce numéro n'a pas le bon nombre de chiffres.";
     return "";

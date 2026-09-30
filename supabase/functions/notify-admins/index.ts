@@ -18,7 +18,7 @@ const json = (body: unknown, status = 200) =>
 
 const fcfa = (n: number) => n.toLocaleString("fr-FR").replace(/ | /g, " ") + " FCFA";
 const OPS: Record<string, string> = { airtel: "Airtel", moov: "Moov" };
-// « +24174670566 » → « +241 74 67 05 66 »
+// « +241XXXXXXXX » → « +241 XX XX XX XX »
 const phone = (v: string | null) => {
   const d = String(v ?? "").replace(/\D/g, "");
   const group = (x: string) => (x.length % 2 ? [x.slice(0, 3), ...(x.slice(3).match(/../g) ?? [])] : x.match(/../g) ?? []).join(" ");
@@ -51,9 +51,12 @@ Deno.serve(async (req) => {
     const { data: claimed } = await db.from("reservations").update({ notified_at: new Date().toISOString() })
       .eq("id", r.id).is("notified_at", null).select("id");
     if (!claimed?.length) return json({ sent: 0, reason: "already_notified" });
+    const detail = r.proof_path ? "📷 Capture reçue"
+      : r.txn_id ? `${OPS[r.operator] ?? r.operator} depuis ${phone(r.payer_phone)} · ID ${r.txn_id}`
+      : "Sans capture : vérifie avec le nom et le montant";
     payload = {
       title: `Paiement à vérifier · ${fcfa(r.amount)}`,
-      body: `${r.first_name} ${r.last_name} (promo ${r.promo}) · ${r.quantity} place${r.quantity > 1 ? "s" : ""}\n${OPS[r.operator] ?? r.operator} depuis ${phone(r.payer_phone)} · ID ${r.txn_id}`,
+      body: `${`${r.first_name} ${r.last_name}`.trim()} (promo ${r.promo}) · ${r.quantity} place${r.quantity > 1 ? "s" : ""}\n${detail}`,
       url: `${site}/admin/#${r.ref}`,
       tag: r.ref,
     };

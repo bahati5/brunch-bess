@@ -235,28 +235,19 @@ offert !</span>
 
     <form id="form" class="rv" style="--d:.2s" novalidate>
       <div class="fields">
-        <div><label for="nom">Nom <span class="req" aria-hidden="true">*</span></label><input id="nom" autocomplete="family-name" maxlength="80" required><p class="err" id="err-nom"></p></div>
-        <div><label for="prenom">Prénom <span class="req" aria-hidden="true">*</span></label><input id="prenom" autocomplete="given-name" maxlength="80" required><p class="err" id="err-prenom"></p></div>
+        <div class="full"><label for="nom">Nom et prénom <span class="req" aria-hidden="true">*</span></label><input id="nom" autocomplete="name" maxlength="120" placeholder="Aurélie Nguema" required><p class="err" id="err-nom"></p></div>
+        <div><label for="tel">Numéro WhatsApp <span class="req" aria-hidden="true">*</span></label><input id="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="0XX XX XX XX" required><p class="hint" id="tel-hint" aria-live="polite"></p><p class="err" id="err-tel"></p></div>
         <div><label for="promo">Promotion <span class="req" aria-hidden="true">*</span></label>
           <select id="promo" required><option value="">Choisis ta promo</option><option>2018</option><option>2019</option><option>2020</option></select><p class="err" id="err-promo"></p></div>
-        <div><label for="tel">Numéro WhatsApp <span class="req" aria-hidden="true">*</span> <span style="font-weight:400;color:var(--muted)">(tel qu'il apparaît dans WhatsApp)</span></label><input id="tel" type="tel" inputmode="tel" autocomplete="tel" placeholder="074 67 05 66" required><p class="hint" id="tel-hint" aria-live="polite"></p><p class="err" id="err-tel"></p></div>
-        <div class="full" id="email-block"><label for="email">E-mail <span class="req" aria-hidden="true">*</span> <span style="font-weight:400;color:var(--muted)">(pour recevoir ton ticket)</span></label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.com" required><p class="err" id="err-email"></p></div>
-        <fieldset class="full">
-          <legend>Ta réponse</legend>
-          <div class="choices">
-            <label class="choice"><input type="radio" name="rep" value="oui" checked> Je participe !</label>
-            <label class="choice"><input type="radio" name="rep" value="non"> Je ne pourrai pas être présent(e)</label>
-          </div>
-        </fieldset>
         <div class="full" id="qty-block">
-          <label id="lbl-qty">Nombre de tickets</label>
+          <label id="lbl-qty">Nombre de places</label>
           <div class="stepper" role="group" aria-labelledby="lbl-qty">
-            <button type="button" id="minus" aria-label="Retirer un ticket">−</button>
+            <button type="button" id="minus" aria-label="Retirer une place">−</button>
             <output id="qty" aria-live="polite">1</output>
-            <button type="button" id="plus" aria-label="Ajouter un ticket">+</button>
+            <button type="button" id="plus" aria-label="Ajouter une place">+</button>
           </div>
         </div>
-        <div class="full"><label for="msg">Un mot pour l'équipe <span style="font-weight:400;color:var(--muted)">(facultatif)</span></label><textarea id="msg" maxlength="1000"></textarea></div>
+        <div class="full"><label for="email">E-mail <span style="font-weight:400;color:var(--muted)">(facultatif, pour recevoir aussi le ticket par e-mail)</span></label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.com"><p class="err" id="err-email"></p></div>
       </div>
       <div class="total" id="total-row"><span>Total</span><strong id="total">15 000 FCFA</strong></div>
       <p class="form-alert hidden" id="form-alert" role="alert"></p>
@@ -264,15 +255,6 @@ offert !</span>
       <p class="fine" id="fine">Paiement par Airtel Money ou Moov Money à l'étape suivante. Tes places sont bloquées 2 h le temps de payer.</p>
       <p class="fine"><a href="reservation.html">J'ai déjà réservé : retrouver ma réservation</a></p>
     </form>
-
-    <div class="done" id="done" tabindex="-1">
-      <div class="check" aria-hidden="true"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#13265C" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div>
-      <p class="hand" style="font-size:2.2rem;margin:0">Merci pour ta réponse !</p>
-      <p style="margin:4px 0 0">L'équipe d'organisation est prévenue. Si tu changes d'avis, tu peux toujours réserver ta place.</p>
-      <div class="row" style="margin-top:16px">
-        <button class="btn btn-line" type="button" id="edit">Modifier ma réponse</button>
-      </div>
-    </div>
   </div>
 </section>
 </main>
@@ -419,19 +401,7 @@ offert !</span>
   $("minus").onclick = function(){ setQty(qty-1); };
   $("plus").onclick = function(){ setQty(qty+1); };
 
-  function rep(){ return document.querySelector('input[name="rep"]:checked').value; }
-  document.querySelectorAll('input[name="rep"]').forEach(function(r){
-    r.addEventListener("change", function(){
-      var yes = rep() === "oui";
-      $("qty-block").classList.toggle("hidden", !yes);
-      $("total-row").classList.toggle("hidden", !yes);
-      $("email-block").classList.toggle("hidden", !yes);
-      $("fine").classList.toggle("hidden", !yes);
-      $("submit").textContent = yes ? "Réserver et payer" : "Envoyer ma réponse";
-    });
-  });
-
-  var form = $("form"), done = $("done"), alertBox = $("form-alert"), sending = false;
+  var form = $("form"), alertBox = $("form-alert"), sending = false;
   if (window.Brunch) Brunch.phonePreview($("tel"), $("tel-hint"));
   function val(id){ return $(id).value.trim(); }
   function setErr(id, msg){
@@ -446,41 +416,34 @@ offert !</span>
     ev.preventDefault();
     if (sending) return;
     showAlert("");
-    var yes = rep() === "oui";
     var ok = true, first = null;
-    [["nom","Indique ton nom."],["prenom","Indique ton prénom."],["promo","Choisis ta promotion."]].forEach(function(f){
+    [["nom","Indique ton nom et ton prénom."],["promo","Choisis ta promotion."]].forEach(function(f){
       var good = setErr(f[0], val(f[0]) ? "" : f[1]); if (!good && !first) first = f[0]; ok = ok && good;
     });
     var tel = Brunch.normPhone(val("tel"));
     if (!setErr("tel", Brunch.phoneError(val("tel")))){ ok = false; if (!first) first = "tel"; }
-    if (yes && !setErr("email", /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val("email")) ? "" : "Indique un e-mail valide : ton ticket y sera envoyé.")){ ok = false; if (!first) first = "email"; }
+    if (!setErr("email", !val("email") || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val("email")) ? "" : "Cet e-mail n'est pas valide (tu peux aussi laisser vide).")){ ok = false; if (!first) first = "email"; }
     if (!ok){ $(first).focus(); return; }
 
-    if (yes && new Date() < OPENING){ showAlert("La billetterie ouvre le " + OPENING.toLocaleDateString("fr-FR", {day:"numeric", month:"long"}) + ". Reviens à ce moment-là pour réserver !"); return; }
+    if (new Date() < OPENING){ showAlert("La billetterie ouvre le " + OPENING.toLocaleDateString("fr-FR", {day:"numeric", month:"long"}) + ". Reviens à ce moment-là pour réserver !"); return; }
 
+    // Un seul champ « Nom et prénom » : le premier mot sert à saluer l'invité
+    var parts = val("nom").split(/\s+/);
     sending = true; var btn = $("submit"), label = btn.textContent;
     btn.disabled = true; btn.textContent = "Un instant…";
     Brunch.rpc("create_reservation", {
-      p_last_name: val("nom"), p_first_name: val("prenom"), p_promo: val("promo"), p_whatsapp: tel,
-      p_email: yes ? val("email") : null, p_quantity: yes ? qty : 0, p_message: val("msg") || null, p_attending: yes
+      p_last_name: parts.slice(1).join(" "), p_first_name: parts[0], p_promo: val("promo"), p_whatsapp: tel,
+      p_email: val("email") || null, p_quantity: qty, p_message: null, p_attending: true
     }).then(function(res){
-      if (yes){
-        Brunch.remember(res.ref, res.token);
-        var r = btn.getBoundingClientRect(); confetti(r.left + r.width/2, r.top + r.height/2);
-        setTimeout(function(){ location.href = Brunch.resaUrl(res.ref, res.token); }, reduce ? 0 : 700);
-      } else {
-        form.classList.add("hidden"); done.classList.add("show"); done.focus({preventScroll:true});
-        sending = false; btn.disabled = false; btn.textContent = label;
-      }
+      Brunch.remember(res.ref, res.token);
+      var r = btn.getBoundingClientRect(); confetti(r.left + r.width/2, r.top + r.height/2);
+      setTimeout(function(){ location.href = Brunch.resaUrl(res.ref, res.token); }, reduce ? 0 : 700);
     }).catch(function(err){
       showAlert(Brunch.errorText(err));
       sending = false; btn.disabled = false; btn.textContent = label;
       if (info) Brunch.rpc("get_public_info").then(function(d){ info = d; applyInfo(); }).catch(function(){});
     });
   });
-  $("edit").onclick = function(){
-    done.classList.remove("show"); form.classList.remove("hidden"); $("nom").focus();
-  };
 })();
 </script>
 </body>

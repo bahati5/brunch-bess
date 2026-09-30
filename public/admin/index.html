@@ -75,6 +75,11 @@ dialog p{margin:0 0 14px}
 @keyframes flash{0%,50%{box-shadow:0 0 0 4px var(--sun)}100%{box-shadow:none}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:90;max-width:min(560px,100% - 32px);padding:12px 18px;border-radius:14px;background:#13265C;color:#fff;font-weight:700;box-shadow:0 18px 40px -18px rgba(0,0,0,.6)}
 .toast.bad{background:#8C1D18}
+.proof-thumb{display:block;margin:6px 0 4px;padding:0;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sky-pale);cursor:zoom-in;width:120px;height:90px}
+.proof-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.proof-big{display:block;width:100%;max-height:52vh;object-fit:contain;border-radius:12px;border:1.5px solid var(--line);background:var(--sky-pale);margin:0 0 14px}
+.btn-wa{display:flex;width:100%;background:#25D366;color:#0B3B1E;box-shadow:0 6px 0 -1px #13265C;margin:0 0 14px}
+.btn-wa:hover{background:#3BE07A}
 </style>
 </head>
 <body class="page">
@@ -140,7 +145,7 @@ dialog p{margin:0 0 14px}
             <div><label for="s-airtel-name">Nom affiché (Airtel)</label><input id="s-airtel-name"></div>
             <div><label for="s-moov">Moov Money</label><input id="s-moov" type="tel"></div>
             <div><label for="s-moov-name">Nom affiché (Moov)</label><input id="s-moov-name"></div>
-            <div><label for="s-contact">WhatsApp de contact</label><input id="s-contact" type="tel" placeholder="074 67 05 66"></div>
+            <div><label for="s-contact">WhatsApp de contact</label><input id="s-contact" type="tel" placeholder="0XX XX XX XX"></div>
           </div>
         </fieldset>
         <fieldset><legend>Lieu (révélé sur les tickets validés)</legend>
@@ -171,7 +176,7 @@ dialog p{margin:0 0 14px}
     <select id="rj-reason">
       <option>Paiement introuvable sur nos comptes.</option>
       <option>Montant reçu différent du montant attendu.</option>
-      <option>ID de transaction incorrect.</option>
+      <option>Capture illisible ou incomplète.</option>
       <option value="">Autre motif…</option>
     </select>
     <textarea id="rj-other" class="hidden" style="margin-top:10px" placeholder="Précise le motif"></textarea>
@@ -215,8 +220,7 @@ dialog p{margin:0 0 14px}
     <h2>Réservation manuelle (validée d'office)</h2>
     <p class="muted" style="margin:-6px 0 12px;font-size:.9rem">Pour un paiement en espèces ou un invité sans smartphone. Le ticket est émis tout de suite.</p>
     <div class="grid2">
-      <div><label for="a-nom">Nom</label><input id="a-nom" required></div>
-      <div><label for="a-prenom">Prénom</label><input id="a-prenom" required></div>
+      <div style="grid-column:1/-1"><label for="a-nom">Nom et prénom</label><input id="a-nom" required></div>
       <div><label for="a-promo">Promotion</label><select id="a-promo"><option>2018</option><option>2019</option><option>2020</option></select></div>
       <div><label for="a-tel">WhatsApp</label><input id="a-tel" type="tel" required></div>
       <div><label for="a-email">E-mail <span class="muted">(facultatif)</span></label><input id="a-email" type="email"></div>
@@ -291,6 +295,18 @@ dialog p{margin:0 0 14px}
     if (d.reason === "no_email") return ["Pas d'e-mail pour cette réservation.", false];
     return ["Échec de l'e-mail : " + (d.detail || d.reason || d.error || "erreur inconnue"), true];
   }
+  function fullName(r){ return (r.first_name + " " + (r.last_name || "")).trim(); }
+  function waTicketText(r){ return "Bonjour " + r.first_name + ", ton paiement est confirmé ! Voici ton ticket pour le Grand Brunch Retrouvailles (lieu et QR code) : " + ticketUrl(r); }
+  // Captures d'écran : liens temporaires signés (bucket privé)
+  var proofUrls = {};
+  async function loadProofs(){
+    var need = rows.filter(function(r){ return r.proof_path && !proofUrls[r.proof_path]; }).map(function(r){ return r.proof_path; });
+    if (!need.length || !sb.storage) return;
+    var res = await sb.storage.from("proofs").createSignedUrls(need, 6 * 3600);
+    (res.data || []).forEach(function(x){ if (x.signedUrl) proofUrls[x.path] = x.signedUrl; });
+  }
+  function isDuplicate(r){ return !!r.proof_hash && rows.some(function(x){ return x.id !== r.id && x.proof_hash === r.proof_hash; }); }
+  function proofImg(r, cls){ var im = document.createElement("img"); im.className = cls || ""; im.src = proofUrls[r.proof_path] || ""; im.alt = "Capture du paiement de " + fullName(r); return im; }
   function ticketUrl(r){ return SITE + Brunch.resaUrl(r.ref, r.access_token); }
   function isActive(r){ return r.status === "validated" || r.status === "declared" || (r.status === "pending" && new Date(r.expires_at) > new Date()); }
   function effStatus(r){ return r.status === "pending" && new Date(r.expires_at) <= new Date() ? "expired" : r.status; }
@@ -332,6 +348,7 @@ dialog p{margin:0 0 14px}
     ]);
     if (res[0].error){ if (res[0].error.code === "PGRST301") return showLogin("Session expirée."); return; }
     rows = res[0].data; settings = res[1].data; sms = res[2].data || [];
+    await loadProofs().catch(function(){});
     renderStats(); renderTabs(); renderList();
     focusRef();
   }
@@ -403,7 +420,7 @@ dialog p{margin:0 0 14px}
     var box = el("article", "item" + (s === "declared" ? " declared" : "")); box.id = "r-" + r.ref;
 
     var who = el("div");
-    var h = el("h3", "", r.first_name + " " + r.last_name + " ");
+    var h = el("h3", "", fullName(r) + " ");
     var pill = el("span", "pill " + st[1], st[0]); pill.style.marginLeft = "6px"; h.append(pill);
     who.append(h, el("p", "meta", r.ref + " · Promo " + r.promo + " · " + Brunch.fmtPhone(r.whatsapp) + (r.email ? " · " + r.email : "")),
                el("p", "meta", "Réservé " + ago(r.created_at) + (r.message ? " · « " + r.message + " »" : "")));
@@ -423,6 +440,16 @@ dialog p{margin:0 0 14px}
           m.amount === r.amount ? "SMS reçu : montant OK" : "SMS reçu : " + Brunch.fcfa(m.amount) + " au lieu de " + Brunch.fcfa(r.amount)));
       }
     }
+    if (r.proof_path){
+      var th = el("button", "proof-thumb"); th.type = "button"; th.title = "Agrandir la capture";
+      th.append(proofImg(r)); th.onclick = function(){ ask({title:"Capture de " + fullName(r), body:[proofImg(r, "proof-big")], ok:"Fermer", cancel:false}); };
+      pay.append(th);
+      if (r.declared_at && !r.txn_id) pay.append(el("div", "meta", "Capture envoyée " + ago(r.declared_at)));
+      if (isDuplicate(r)) pay.append(el("span", "match warn", "⚠ Même capture qu'une autre réservation"));
+    } else if (s === "declared" && !r.txn_id){
+      pay.append(el("span", "match warn", "Sans capture : vérifie avec le nom et le montant"));
+      if (r.declared_at) pay.append(el("div", "meta", "Déclaré " + ago(r.declared_at)));
+    }
     if (s === "pending") pay.append(el("div", "meta", "Places bloquées jusqu'à " + Brunch.time(r.expires_at)));
     if (s === "validated") pay.append(el("div", "meta", "Validée par " + (r.validated_by === "auto" ? "rapprochement SMS" : r.validated_by) + " · entrées " + r.checked_in + "/" + r.quantity));
     if (r.rejected_reason) pay.append(el("div", "meta", "Motif : " + r.rejected_reason));
@@ -435,16 +462,8 @@ dialog p{margin:0 0 14px}
     }
     if (s === "declared") btn("Refuser", "ko", function(){ reject(r); });
     if (s === "validated"){
-      var waText = "Bonjour " + r.first_name + ", ton paiement est confirmé ! Voici ton ticket pour le Grand Brunch Retrouvailles (lieu et QR code) : " + ticketUrl(r);
       var wa = el("a", "sbtn", "WhatsApp");
-      wa.href = Brunch.waLink(r.whatsapp, waText); wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
-      // Au Gabon, le compte WhatsApp peut être enregistré avec ou sans le 0 : on propose l'autre format
-      var alt = Brunch.waAlt(r.whatsapp);
-      if (alt){
-        var wa2 = el("a", "sbtn", alt.indexOf("2410") === 0 ? "WhatsApp avec le 0" : "WhatsApp sans le 0");
-        wa2.href = Brunch.waLink(alt, waText); wa2.target = "_blank"; wa2.rel = "noopener";
-        wa2.title = "Si le premier bouton ne trouve pas le contact : +" + alt; acts.append(wa2);
-      }
+      wa.href = Brunch.waLink(r.whatsapp, waTicketText(r)); wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
       btn("Copier le lien", "", function(){ var b = this; Brunch.copy(ticketUrl(r)).then(function(){ b.textContent = "Copié !"; }); });
       if (r.email) btn(r.email_sent_at ? "Renvoyer l'e-mail" : "Envoyer l'e-mail", "", function(){
         var b = this; b.disabled = true; b.textContent = "Envoi…";
@@ -465,7 +484,7 @@ dialog p{margin:0 0 14px}
   async function validate(r){
     var dl = el("dl", "ask-rows");
     function line(k, v, cls){ dl.append(el("dt", "", k)); var dd = el("dd"); if (cls) dd.append(el("span", cls, v)); else dd.textContent = v; dl.append(dd); }
-    line("Invité", r.first_name + " " + r.last_name + " · promo " + r.promo);
+    line("Invité", fullName(r) + " · promo " + r.promo);
     line("Places", String(r.quantity));
     line("Montant", Brunch.fcfa(r.amount));
     if (r.txn_id){
@@ -473,22 +492,31 @@ dialog p{margin:0 0 14px}
       line("Payé depuis", Brunch.fmtPhone(r.payer_phone));
       line("ID transaction", r.txn_id, "ask-txn");
     }
-    var body = [dl];
-    body.push(el("p", "ask-note", r.txn_id
+    var body = r.proof_path ? [proofImg(r, "proof-big"), dl] : [dl];
+    body.push(el("p", "ask-note", r.proof_path
+      ? "Compare avec le SMS reçu sur le téléphone de réception : même montant (" + Brunch.fcfa(r.amount) + "), même nom, même heure."
+      : r.txn_id
       ? "Ouvre les SMS " + OPS[r.operator] + " Money du téléphone de réception : le montant et l'ID doivent correspondre exactement."
-      : "Aucun paiement déclaré : valide seulement si l'argent a bien été reçu."));
+      : "Pas de capture : valide seulement si tu retrouves un paiement de " + Brunch.fcfa(r.amount) + " au nom de " + fullName(r) + "."));
+    if (isDuplicate(r)) body.push(el("p", "ask-note ko", "Cette capture a déjà été envoyée pour une autre réservation : vérifie bien avant de valider."));
     var m = smsFor(r);
     if (m && m.amount !== r.amount) body.push(el("p", "ask-note ko", "Le SMS reçu indique " + Brunch.fcfa(m.amount) + " au lieu de " + Brunch.fcfa(r.amount) + "."));
     if (!isActive(r)) body.push(el("p", "ask-note ko", "Ces places n'étaient plus bloquées : vérifie qu'il en reste avant de valider."));
     if (!(await ask({title:"Valider le paiement ?", body:body, ok:"Valider le paiement"}))) return;
-    act(async function(){
-      await Brunch.rpc("admin_validate", {p_id:r.id, p_note:null});
-      if (r.email) invoke("send-ticket", {ref:r.ref, token:r.access_token}).then(function(d){ var mm = mailMsg(d); toast(mm[0], mm[1]); });
-      else toast("Réservation validée. Pas d'e-mail : envoie le ticket par WhatsApp.");
-    });
+    var ok = false;
+    await act(async function(){ await Brunch.rpc("admin_validate", {p_id:r.id, p_note:null}); ok = true; });
+    if (ok) sendTicketDialog(r);
+  }
+  // Après validation : un seul gros bouton pour envoyer le ticket sur WhatsApp (+ e-mail automatique s'il y en a un)
+  function sendTicketDialog(r){
+    var wa = el("a", "btn btn-wa", "Envoyer le ticket sur WhatsApp");
+    wa.href = Brunch.waLink(r.whatsapp, waTicketText(r)); wa.target = "_blank"; wa.rel = "noopener";
+    var mail = el("p", "muted", r.email ? "E-mail en cours d'envoi à " + r.email + "…" : "Pas d'e-mail pour cette réservation : WhatsApp suffit.");
+    ask({title:"Ticket prêt pour " + fullName(r) + " !", body:[el("p", "", "Envoie-lui son ticket en un geste :"), wa, mail], ok:"Terminé", cancel:false});
+    if (r.email) invoke("send-ticket", {ref:r.ref, token:r.access_token}).then(function(d){ mail.textContent = mailMsg(d)[0]; });
   }
   function reject(r){
-    var d = $("dlg-reject"); $("rj-name").textContent = r.first_name + " " + r.last_name;
+    var d = $("dlg-reject"); $("rj-name").textContent = fullName(r);
     $("rj-reason").selectedIndex = 0; $("rj-other").value = ""; show($("rj-other"), false);
     d.onclose = function(){
       if (d.returnValue !== "ok") return;
@@ -501,7 +529,7 @@ dialog p{margin:0 0 14px}
   async function cancel(r){
     var reason = await ask({
       title:"Annuler la réservation ?",
-      body:[el("p", "", r.ref + " · " + r.first_name + " " + r.last_name + " · " + r.quantity + (r.quantity > 1 ? " places" : " place") + ". " +
+      body:[el("p", "", r.ref + " · " + fullName(r) + " · " + r.quantity + (r.quantity > 1 ? " places" : " place") + ". " +
         (r.status === "validated" ? "Le ticket ne sera plus valable à l'entrée." : "Les places seront remises en vente."))],
       input:"Motif (facultatif)", ok:"Annuler la réservation", cancel:"Retour", danger:true
     });
@@ -516,15 +544,17 @@ dialog p{margin:0 0 14px}
     var v = function(id){ return $(id).value.trim(); };
     var qty = parseInt(v("a-qty"), 10);
     var telErr = Brunch.phoneError(v("a-tel"));
-    if (!v("a-nom") || !v("a-prenom") || telErr || !(qty > 0)){
-      $("a-err").textContent = telErr ? "WhatsApp : " + telErr : "Remplis nom, prénom et le nombre de places."; show($("a-err"), true); return;
+    if (!v("a-nom") || telErr || !(qty > 0)){
+      $("a-err").textContent = telErr ? "WhatsApp : " + telErr : "Remplis le nom et le nombre de places."; show($("a-err"), true); return;
     }
+    var parts = v("a-nom").split(/\s+/);
     try {
-      var res = await Brunch.rpc("admin_create_reservation", {p_last_name:v("a-nom"), p_first_name:v("a-prenom"), p_promo:v("a-promo"),
+      var res = await Brunch.rpc("admin_create_reservation", {p_last_name:parts.slice(1).join(" "), p_first_name:parts[0], p_promo:v("a-promo"),
         p_whatsapp:Brunch.normPhone(v("a-tel")), p_email:v("a-email") || null, p_quantity:qty, p_note:v("a-note") || null});
       $("dlg-add").close();
-      if (v("a-email")) invoke("send-ticket", {ref:res.ref, token:res.token}).then(function(d){ var m = mailMsg(d); toast(m[0], m[1]); });
       filter = "validated"; await refresh();
+      var created = rows.find(function(x){ return x.ref === res.ref; });
+      if (created) sendTicketDialog(created);
     } catch(e){ $("a-err").textContent = adminErr(e); show($("a-err"), true); }
   });
 

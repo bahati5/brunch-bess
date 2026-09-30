@@ -72,3 +72,19 @@
 .mini-top .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:68px}
 .mini-top nav{display:flex;gap:18px;align-items:center}
 .mini-top nav a{font-size:.74rem;font-weight:800;letter-spacing:.14em;text-transform:uppercase;text-decoration:none}
+
+/* Paiement par capture */
+.paynums{display:grid;gap:10px}
+.paynum{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 16px;border:2px solid var(--line);border-radius:16px;border-left-width:8px}
+.paynum.airtel{border-left-color:#E4002B}
+.paynum.moov{border-left-color:#0066B3}
+.paynum div{display:flex;flex-direction:column;gap:2px}
+.paynum .op-name{font-weight:800;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.paynum b{font-size:1.45rem;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.paynum .muted{font-size:.85rem}
+.proof-btn{width:100%;min-height:64px;font-size:1rem;cursor:pointer}
+.proof-btn.is-busy{opacity:.75;cursor:progress}
+.linklike{display:block;margin:16px auto 0;background:none;border:0;padding:8px;color:var(--muted);font:inherit;font-size:.92rem;font-weight:700;text-decoration:underline;cursor:pointer}
+.nocap{margin-top:12px;padding:14px 16px;border-radius:14px;background:var(--sky-pale);border:1.5px solid var(--line)}
+.nocap p{margin:0 0 12px}
+.nocap .btn{width:100%}

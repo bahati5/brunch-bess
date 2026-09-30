@@ -6,10 +6,10 @@ Invitation digitale + billetterie avec paiement Airtel Money / Moov Money, sans 
 
 1. L'invité remplit la fiche sur l'invitation → réservation `BB-XXXXX`, places **bloquées 2 h** (réglable).
 2. La page de suivi affiche le numéro Airtel / Moov, le montant exact et la référence.
-3. Après le transfert, l'invité déclare l'opérateur, le numéro payeur et l'**ID de transaction** du SMS.
-4. Si un SMS reçu correspond (même opérateur, même ID, même montant) → **validation automatique**.
-   Sinon la réservation apparaît dans l'admin « À vérifier » : un admin compare avec le téléphone et valide ou refuse.
-5. Validée → ticket groupé (QR code, N places) sur la page de suivi, PDF téléchargeable, e-mail automatique, lieu révélé.
+3. Après le transfert, l'invité envoie la **capture d'écran** du message de confirmation (ou « je n'ai pas de capture »).
+4. Les admins reçoivent une notification ; ils comparent la capture avec le SMS reçu sur leur téléphone et valident.
+5. Validée → ticket groupé (QR code, N places) sur la page de suivi, PDF téléchargeable, lieu révélé ;
+   l'admin l'envoie en un bouton sur WhatsApp (et par e-mail automatiquement si l'invité en a donné un).
 6. Jour J → `admin/scan.html` scanne le QR et fait entrer 1 à N personnes.
 
 Garde-fous : un ID de transaction ne sert qu'une fois, pas de survente (verrou SQL), le lieu n'est jamais envoyé
@@ -76,6 +76,12 @@ Tout se fait depuis les interfaces web, sans installer d'outil.
    - `APPS_SCRIPT_SECRET` = la même phrase que `SECRET`
    - `SITE_URL` = l'adresse du site (ex. `https://brunch-bess.vercel.app`)
 
+### 6 ter. Captures d'écran de paiement
+1. SQL Editor : exécuter `supabase/migrations/20261002000000_capture_paiement.sql` (crée aussi le bucket privé `proofs`).
+2. **Edge Functions → Deploy a new function → Via Editor**, nom `upload-proof`, coller `supabase/functions/upload-proof/index.ts`
+   → Deploy, puis désactiver **Verify JWT**.
+3. Redéployer `notify-admins` (la notification indique « Capture reçue »).
+
 ### 6 bis. Notifications des admins sur téléphone
 1. SQL Editor : exécuter `supabase/migrations/20261001000000_push_admins.sql` (si pas déjà fait à l'étape 2).
 2. **Edge Functions → Deploy a new function → Via Editor**, nom `notify-admins`, coller `supabase/functions/notify-admins/index.ts` → Deploy, puis désactiver **Verify JWT**.
@@ -105,8 +111,8 @@ Pour tester avant le 1er octobre, avancer la date d'**ouverture**.
 ## Numéros de téléphone (Gabon)
 Depuis avril 2024 : national `0XX XX XX XX` (9 chiffres), international `+241` + 8 chiffres sans le 0.
 Les comptes WhatsApp gardent le format de leur création (`+241 0XX…` ou ancien `+241 0X XX XX XX`) :
-le site accepte toutes ces écritures, enregistre au format international et l'admin propose un second bouton
-WhatsApp (avec / sans le 0) si le premier ne trouve pas le contact.
+aucun site ne peut vérifier le bon format. Le site garde donc le numéro tel que l'invité le recopie depuis son profil
+WhatsApp (0 compris) en ajoutant seulement l'indicatif +241, et l'admin n'a qu'un bouton WhatsApp.
 
 ## À venir
 - Réception automatique des SMS (Android : appli de transfert de SMS ; iPhone : automatisation Raccourcis)
