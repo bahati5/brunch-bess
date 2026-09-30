@@ -107,33 +107,12 @@
 <!-- Ticket validé -->
 <template id="tpl-ticket">
   <h1 class="script page-title">C'est tout bon !</h1>
-  <p class="lead">Ton paiement est confirmé. Présente ce QR code à l'entrée, sur ton téléphone ou imprimé.</p>
-  <article class="ticket" aria-label="Ticket">
-    <div class="ticket-head">
-      <span class="caps">Lycée Mgr Bessieux · Promos 2018 · 2019 · 2020</span>
-      <span class="script">Grand Brunch Retrouvailles</span>
-      <span style="font-weight:700">Samedi 31 octobre 2026 · à partir de 12h</span>
-    </div>
-    <div class="ticket-body">
-      <dl class="kv">
-        <dt>Titulaire</dt><dd data-f="full_name"></dd>
-        <dt>Promo</dt><dd data-f="promo"></dd>
-        <dt>Valable pour</dt><dd data-f="places"></dd>
-        <dt>Référence</dt><dd data-f="ref"></dd>
-        <dt>Entrées</dt><dd data-f="entries"></dd>
-      </dl>
-      <div class="qr"><div id="qr"></div><p class="qr-code" data-f="ticket_code"></p></div>
-    </div>
-  </article>
-  <section class="card venue hidden" id="venue" style="margin-top:18px">
-    <span class="caps">Le lieu, enfin révélé</span>
-    <b data-f="venue_name"></b>
-    <span data-f="venue_address"></span>
-    <p style="margin:8px 0 0" data-f="venue_notes"></p>
-    <p style="margin:8px 0 0"><a id="venue-map" target="_blank" rel="noopener" class="hidden">Ouvrir dans Maps</a></p>
-  </section>
+  <p class="lead">Ton paiement est confirmé. Présente ce ticket à l'entrée, sur ton téléphone ou imprimé.</p>
+  <div id="tk-slot"></div>
+  <div class="tk-after"><span>Entrées utilisées : <b data-f="entries"></b></span><span data-f="venue_notes"></span></div>
   <div class="row" style="margin-top:18px">
     <button class="btn btn-sun" type="button" id="pdf">Télécharger le PDF</button>
+    <a class="btn btn-line hidden" id="venue-map" target="_blank" rel="noopener">Itinéraire vers le lieu</a>
   </div>
   <p class="fine" id="mail-note"></p>
 </template>
@@ -178,6 +157,7 @@
 
   function render(tplId, data){
     clearInterval(countdown);
+    app.classList.remove("wide");
     var frag = $(tplId).content.cloneNode(true);
     frag.querySelectorAll("[data-f]").forEach(function(el){
       var v = data[el.getAttribute("data-f")];
@@ -196,7 +176,7 @@
       amount_fmt:Brunch.fcfa(r.amount), places:places, expires_time:r.expires_at ? Brunch.time(r.expires_at) : "",
       op_label:OPS[r.operator] || "", payer_phone:Brunch.fmtPhone(r.payer_phone), txn_id:r.txn_id, ticket_code:r.ticket_code,
       entries:r.checked_in + " / " + r.quantity,
-      venue_name:r.venue && r.venue.name, venue_address:r.venue && r.venue.address, venue_notes:r.venue && r.venue.notes
+      venue_notes:r.venue && r.venue.notes ? "Accès : " + r.venue.notes : ""
     };
   }
 
@@ -297,11 +277,9 @@
 
   function renderTicket(){
     render("tpl-ticket", view(resa));
-    $("qr").innerHTML = Ticket.qrSvg(resa.ticket_code);
-    if (resa.venue && resa.venue.name){
-      show($("venue"), true);
-      if (resa.venue.maps_url){ $("venue-map").href = resa.venue.maps_url; show($("venue-map"), true); }
-    }
+    app.classList.add("wide");
+    $("tk-slot").append(Ticket.render(resa));
+    if (resa.venue && resa.venue.maps_url){ $("venue-map").href = resa.venue.maps_url; show($("venue-map"), true); }
     $("pdf").onclick = function(){
       var b = this; b.disabled = true; b.textContent = "Préparation…";
       Ticket.downloadPdf(resa).catch(function(){ $("mail-note").textContent = "Le PDF n'a pas pu être créé. Réessaie, ou fais une capture d'écran du ticket."; })

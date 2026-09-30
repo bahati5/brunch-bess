@@ -2,6 +2,7 @@
 .page{min-height:100vh;display:flex;flex-direction:column;background:var(--sky-pale)}
 .page main{flex:1;padding:36px 0 64px}
 .narrow{width:min(620px,100% - 32px);margin-inline:auto}
+.narrow.wide{width:min(1000px,100% - 32px)}
 .page-title{font-size:clamp(2.4rem,7vw,3.4rem);line-height:1.1;margin:0 0 6px}
 .lead{color:var(--muted);margin:0 0 22px}
 .card{background:var(--card);border:1.5px solid var(--line);border-radius:20px;padding:24px clamp(18px,4vw,30px);box-shadow:0 18px 40px -30px rgba(19,38,92,.6)}
@@ -51,19 +52,56 @@
 [data-theme="dark"] .pill.ko,[data-theme="dark"] .alert.ko{background:#4A1A17;color:#FFD9D4}
 [data-theme="dark"] .pill.wait{background:#5A4A10;color:#FFF1B3}
 
-/* Ticket */
-.ticket{background:#13265C;color:#fff;border:1.5px solid var(--line);border-radius:22px;overflow:hidden;box-shadow:0 24px 50px -28px rgba(19,38,92,.8)}
-.ticket-head{padding:22px 24px 18px;border-bottom:2px dashed rgba(255,255,255,.3);position:relative}
-.ticket-head::before,.ticket-head::after{content:"";position:absolute;bottom:-14px;width:28px;height:28px;border-radius:50%;background:var(--sky-pale)}
-.ticket-head::before{left:-14px}.ticket-head::after{right:-14px}
-.ticket-head .caps{color:var(--sun)}
-.ticket-head .script{font-size:2.2rem;line-height:1.1;display:block}
-.ticket-body{padding:22px 24px 26px;display:grid;grid-template-columns:1fr auto;gap:18px;align-items:center}
-@media (max-width:480px){.ticket-body{grid-template-columns:1fr}.qr{justify-self:center}}
-.ticket-body .kv dt{color:#B8C5E6}
-.qr{background:#fff;border-radius:14px;padding:10px;width:170px}
-.qr svg{display:block;width:100%;height:auto}
-.qr-code{font-family:ui-monospace,Consolas,monospace;font-weight:700;letter-spacing:.12em;text-align:center;color:#13265C;font-size:.85rem;margin-top:4px}
+/* Ticket d'entrée : couleurs fixes (un vrai billet ne change pas avec le thème) */
+.tk{--tk-navy:#13265C;--tk-sun:#F7C51E;--tk-muted:#5A678C;position:relative;display:flex;align-items:stretch;width:100%;max-width:960px;margin:0 auto;color:var(--tk-navy);text-align:left}
+.tk-main{flex:1 1 auto;min-width:0;background:#fff;border-radius:22px 6px 6px 22px;overflow:hidden;position:relative;box-shadow:0 22px 40px -26px rgba(19,38,92,.7)}
+.tk-head{display:flex;align-items:center;gap:12px;padding:14px 22px;background:var(--tk-navy);color:#fff}
+.tk-logo{width:42px;height:42px;border-radius:50%;background:#fff;box-shadow:0 0 0 2px var(--tk-sun);flex:none}
+.tk-brand{display:block}
+.tk-brand .script{display:block;font-size:1.45rem;line-height:1.15}
+.tk-brand .caps{display:block;font-size:.58rem;line-height:1.2;letter-spacing:.34em;color:var(--tk-sun);margin-top:2px}
+.tk-kind{margin-left:auto;font-weight:800;font-size:.68rem;letter-spacing:.22em;text-transform:uppercase;color:var(--tk-sun);text-align:right}
+.tk-body{position:relative;padding:18px 24px 18px;overflow:hidden}
+.tk-watermark{position:absolute;right:-46px;bottom:-54px;width:250px;height:250px;opacity:.07;pointer-events:none;transform:rotate(-12deg)}
+.tk-over{position:relative;margin:0;font-weight:800;font-size:.66rem;letter-spacing:.18em;text-transform:uppercase;color:var(--tk-muted)}
+.tk-title{position:relative;display:flex;align-items:flex-end;flex-wrap:nowrap;margin:6px 0 16px;line-height:1;white-space:nowrap}
+.tk-title span{display:block;font-family:"Anton","Impact",sans-serif;font-size:clamp(3rem,9vw,4.4rem);line-height:1.02;letter-spacing:.01em;color:var(--tk-navy);text-shadow:4px 4px 0 var(--tk-sun)}
+.tk-title em{display:block;font-style:normal;font-size:clamp(1.5rem,4.4vw,2.2rem);line-height:1.2;color:var(--tk-navy);margin:0 0 .35em 10px;transform:rotate(-6deg)}
+.tk-grid{position:relative;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 18px;margin:0}
+.tk-grid div{min-width:0}
+.tk-grid dt{font-size:.6rem;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:var(--tk-muted)}
+.tk-grid dd{margin:3px 0 0;font-weight:800;font-size:.98rem;line-height:1.25;overflow-wrap:anywhere}
+.tk-grid .tk-wide{grid-column:1/-1;padding-top:10px;border-top:1.5px solid #E3ECF6}
+.tk-motto{position:relative;margin:12px 0 0;font-size:1.02rem;color:var(--tk-navy)}
+.tk-stub{flex:0 0 240px;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:20px 18px;background:var(--tk-sun);border-radius:6px 22px 22px 6px;border-left:3px dashed var(--tk-navy);text-align:center;box-shadow:0 22px 40px -26px rgba(19,38,92,.7)}
+.tk-stub::before,.tk-stub::after{content:"";position:absolute;left:-19px;width:34px;height:34px;border-radius:50%;background:var(--tk-hole,var(--sky-pale))}
+.tk-stub::before{top:-17px}
+.tk-stub::after{bottom:-17px}
+.tk-admit{margin:0;font-size:.64rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.tk-admit b{font-weight:800}
+.tk-qr{width:150px;padding:8px;background:#fff;border-radius:12px;box-shadow:0 0 0 2px var(--tk-navy)}
+.tk-qr svg{display:block;width:100%;height:auto}
+.tk-code{margin:0;font-family:ui-monospace,Consolas,monospace;font-weight:700;font-size:.8rem;letter-spacing:.16em}
+.tk-price{margin:2px 0 0;font-family:"Anton","Impact",sans-serif;font-size:1.9rem;line-height:1}
+.tk-hint{margin:0;font-size:1.05rem}
+/* Mobile : le talon passe sous le ticket */
+@media (max-width:680px){
+  .tk:not(.tk--wide){flex-direction:column}
+  .tk:not(.tk--wide) .tk-main{border-radius:22px 22px 6px 6px}
+  .tk:not(.tk--wide) .tk-stub{flex-basis:auto;border-radius:6px 6px 22px 22px;border-left:0;border-top:3px dashed var(--tk-navy);padding:22px 18px 20px}
+  .tk:not(.tk--wide) .tk-stub::before,.tk:not(.tk--wide) .tk-stub::after{top:-19px;bottom:auto}
+  .tk:not(.tk--wide) .tk-stub::before{left:-17px}
+  .tk:not(.tk--wide) .tk-stub::after{left:auto;right:-17px}
+  .tk:not(.tk--wide) .tk-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .tk:not(.tk--wide) .tk-kind{font-size:.6rem;letter-spacing:.16em}
+  .tk:not(.tk--wide) .tk-qr{width:180px}
+}
+/* Version PDF : toujours en paysage, taille fixe, capturée hors écran */
+.tk-stage{position:fixed;left:-12000px;top:0;padding:26px;background:#EAF5FD;--tk-hole:#EAF5FD}
+.tk--wide{width:1000px;max-width:none}
+.tk--wide .tk-title span{font-size:4.6rem}
+.tk--wide .tk-title em{font-size:2.3rem}
+.tk-after{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;margin:14px 4px 0;color:var(--muted);font-size:.9rem}
 .venue{background:var(--sun-soft);color:#13265C;border-radius:16px;padding:18px}
 .venue .caps{display:block;margin-bottom:6px}
 .venue b{font-size:1.25rem;display:block}
@@ -88,3 +126,9 @@
 .nocap{margin-top:12px;padding:14px 16px;border-radius:14px;background:var(--sky-pale);border:1.5px solid var(--line)}
 .nocap p{margin:0 0 12px}
 .nocap .btn{width:100%}
+/* html2canvas dessine Anton et Kaushan plus bas que le navigateur : on compense dans la capture PDF uniquement */
+.tk-stage .tk-title{margin-bottom:40px}
+.tk-stage .tk-title em{margin-bottom:.9em}
+.tk-stage .tk-brand .caps{margin-top:12px}
+.tk-stage .tk-price{margin-bottom:14px}
+.tk-stage .tk-motto{margin-top:6px;padding-bottom:12px}
