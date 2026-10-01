@@ -462,6 +462,7 @@ dialog p{margin:0 0 14px}
     }
     if (s === "declared") btn("Refuser", "ko", function(){ reject(r); });
     if (s === "rejected") btn("Prévenir sur WhatsApp", "", function(){ rejectDialog(r, r.rejected_reason || "paiement non confirmé"); });
+    if (s === "cancelled" || s === "expired") btn("Prévenir sur WhatsApp", "", function(){ notifyDialog(r); });
     if (s === "validated"){
       var wa = el("a", "sbtn", "WhatsApp");
       wa.href = Brunch.waLink(r.whatsapp, waTicketText(r)); wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
@@ -516,6 +517,25 @@ dialog p{margin:0 0 14px}
     wa.href = Brunch.waLink(r.whatsapp, text); wa.target = "_blank"; wa.rel = "noopener";
     ask({title:"Paiement refusé", body:[el("p", "", "Préviens " + fullName(r) + " pour qu'il ou elle renvoie une capture :"), wa,
       el("p", "muted", "Sa page de suivi affiche déjà le motif et le bouton pour renvoyer une capture.")], ok:"Terminé", cancel:false});
+  }
+  // Réservation annulée ou expirée : prévenir l'invité sur WhatsApp avec un message adapté
+  function notifyDialog(r){
+    var s = effStatus(r), text, title, hint;
+    if (s === "cancelled"){
+      var why = (r.admin_note || "").replace(/\.$/, "");
+      title = "Réservation annulée";
+      text = "Bonjour " + r.first_name + ", ta réservation " + r.ref + " pour le Grand Brunch Retrouvailles a été annulée" +
+        (why ? " (" + why + ")" : "") + ". Réponds-nous ici pour qu'on trouve une solution ensemble.";
+      hint = "Tu peux modifier le message dans WhatsApp avant de l'envoyer (par exemple pour demander le complément du paiement).";
+    } else {
+      title = "Délai de paiement dépassé";
+      text = "Bonjour " + r.first_name + ", le délai de paiement de ta réservation " + r.ref + " pour le Grand Brunch Retrouvailles est dépassé. " +
+        "Si tu as déjà payé, envoie ta capture ici : " + ticketUrl(r) + " ; sinon tu peux refaire une réservation sur le site.";
+      hint = "S'il reste des places, sa page de suivi lui permet d'envoyer sa capture.";
+    }
+    var wa = el("a", "btn btn-wa", "Prévenir " + r.first_name + " sur WhatsApp");
+    wa.href = Brunch.waLink(r.whatsapp, text); wa.target = "_blank"; wa.rel = "noopener";
+    ask({title:title, body:[el("p", "", "Préviens " + fullName(r) + " :"), wa, el("p", "muted", hint)], ok:"Terminé", cancel:false});
   }
   // Après validation : un seul gros bouton pour envoyer le ticket sur WhatsApp (+ e-mail automatique s'il y en a un)
   function sendTicketDialog(r){
