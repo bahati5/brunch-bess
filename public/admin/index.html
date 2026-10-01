@@ -211,7 +211,7 @@ dialog p{margin:0 0 14px}
     <div class="row">
       <button class="btn btn-line" value="close">Fermer</button>
       <button class="btn btn-line hidden" type="button" id="nt-off">Désactiver</button>
-      <button class="btn btn-line hidden" type="button" id="nt-test">Envoyer un test</button>
+      <button class="btn btn-line hidden" type="button" id="nt-test">Tester avec l'appli fermée</button>
       <button class="btn btn-sun hidden" type="button" id="nt-on">Activer</button>
     </div>
   </form>
@@ -681,8 +681,9 @@ dialog p{margin:0 0 14px}
     if (!$("dlg-notif").open) $("dlg-notif").showModal();
   }
   async function saveSub(sub){ await Brunch.rpc("admin_save_push", {p_sub:sub.toJSON(), p_device:deviceName()}); }
-  async function testNotif(){
-    var d = await invoke("notify-admins", {test:true});
+  async function testNotif(delay){
+    var d = await invoke("notify-admins", {test:true, delay:delay || 0});
+    if (delay && d.sent > 0 && !(d.results || []).some(function(x){ return !x.ok; })) return;   // message « ferme l'appli » déjà affiché
     // Message simple pour les organisatrices ; le détail technique reste dans les journaux Supabase
     var failed = (d.results || []).filter(function(x){ return !x.ok; }).map(function(x){ return (x.device || "").split(" ")[0]; });
     if (d.sent > 0){
@@ -717,7 +718,14 @@ dialog p{margin:0 0 14px}
     }
     b.disabled = false;
   };
-  $("nt-test").onclick = async function(){ this.disabled = true; show($("nt-err"), false); show($("nt-ok"), false); await testNotif(); this.disabled = false; };
+  // Test « appli fermée » : la notification part 10 secondes après l'appui, le temps de quitter l'appli
+  $("nt-test").onclick = async function(){
+    var b = this; b.disabled = true; show($("nt-err"), false);
+    $("nt-ok").textContent = "Ferme l'appli maintenant (retour à l'écran d'accueil) : la notification arrive dans 10 secondes.";
+    show($("nt-ok"), true);
+    await testNotif(10);
+    b.disabled = false;
+  };
   $("nt-off").onclick = async function(){
     var sub = await currentSub();
     if (sub){ await Brunch.rpc("admin_delete_push", {p_endpoint:sub.endpoint}).catch(function(){}); await sub.unsubscribe(); }

@@ -64,6 +64,9 @@ Deno.serve(async (req) => {
     return json({ error: "params" }, 400);
   }
 
+  // Test « appli fermée » : on attend quelques secondes pour laisser l'admin quitter l'appli
+  if (body.test && body.delay) await new Promise((ok) => setTimeout(ok, Math.min(Number(body.delay) || 0, 20) * 1000));
+
   const { data: subs } = await subsQuery;
   let sent = 0;
   const gone: string[] = [];
