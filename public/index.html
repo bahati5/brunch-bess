@@ -251,6 +251,14 @@ offert !</span>
       <a class="btn btn-line" id="resume-link" href="reservation.html">Voir ma réservation</a>
     </div>
 
+    <div class="full-banner hidden" id="full-banner" role="status">
+      <b>C'est complet !</b>
+      <span>Inscris-toi sur la liste d'attente : on te prévient sur WhatsApp dès qu'une place se libère.</span>
+    </div>
+    <div class="wait-done hidden" id="wait-done" role="status" tabindex="-1">
+      <p class="hand" style="font-size:2rem;margin:0">C'est noté !</p>
+      <p style="margin:6px 0 0" id="wait-done-text"></p>
+    </div>
     <form id="form" class="rv" style="--d:.2s" novalidate>
       <div class="fields">
         <div class="full"><label for="nom">Nom et prénom <span class="req" aria-hidden="true">*</span></label><input id="nom" autocomplete="name" maxlength="120" placeholder="Aurélie Nguema" required><p class="err" id="err-nom"></p></div>
@@ -265,7 +273,7 @@ offert !</span>
             <button type="button" id="plus" aria-label="Ajouter une place">+</button>
           </div>
         </div>
-        <div class="full"><label for="email">E-mail <span style="font-weight:400;color:var(--muted)">(facultatif, pour recevoir aussi le ticket par e-mail)</span></label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.com"><p class="err" id="err-email"></p></div>
+        <div class="full" id="email-block"><label for="email">E-mail <span style="font-weight:400;color:var(--muted)">(facultatif, pour recevoir aussi le ticket par e-mail)</span></label><input id="email" type="email" inputmode="email" autocomplete="email" placeholder="prenom@exemple.com"><p class="err" id="err-email"></p></div>
       </div>
       <div class="total" id="total-row"><span>Total</span><strong id="total">15 000 FCFA</strong></div>
       <p class="form-alert hidden" id="form-alert" role="alert"></p>
@@ -393,10 +401,21 @@ offert !</span>
 
   // Billetterie : infos en direct (places restantes, prix, limite par réservation)
   var info = null;
+  var waitMode = false;
+  function setWaitMode(on){
+    waitMode = on;
+    $("full-banner").classList.toggle("hidden", !on);
+    $("email-block").classList.toggle("hidden", on);
+    $("total-row").classList.toggle("hidden", on);
+    $("fine").classList.toggle("hidden", on);
+    $("lbl-qty").textContent = on ? "Nombre de places souhaitées" : "Nombre de places";
+    $("submit").textContent = on ? "M'inscrire sur la liste d'attente" : "Réserver et payer";
+  }
   function applyInfo(){
     if (!info) return;
+    setWaitMode(info.remaining <= 0 && new Date() >= new Date(info.opening_at));
     PRICE = info.price; OPENING = new Date(info.opening_at); CLOSING = new Date(info.closing_at);
-    maxQty = Math.max(1, Math.min(info.max_per_booking || 99, info.remaining || 1));
+    maxQty = waitMode ? 10 : Math.max(1, Math.min(info.max_per_booking || 99, info.remaining || 1));
     if (qty > maxQty) qty = maxQty;
     $("qty").textContent = qty; $("total").textContent = fcfa(qty*PRICE);
     $("fine").textContent = "Paiement par Airtel Money ou Moov Money à l'étape suivante. Tes places sont bloquées " +
@@ -443,6 +462,7 @@ offert !</span>
     if (!setErr("email", !val("email") || /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val("email")) ? "" : "Cet e-mail n'est pas valide (tu peux aussi laisser vide).")){ ok = false; if (!first) first = "email"; }
     if (!ok){ $(first).focus(); return; }
 
+    if (waitMode) return joinWaitlist(tel);
     if (new Date() < OPENING){ showAlert("La billetterie ouvre le " + OPENING.toLocaleDateString("fr-FR", {day:"numeric", month:"long"}) + ". Reviens à ce moment-là pour réserver !"); return; }
 
     // Un seul champ « Nom et prénom » : le premier mot sert à saluer l'invité
@@ -459,9 +479,26 @@ offert !</span>
     }).catch(function(err){
       showAlert(Brunch.errorText(err));
       sending = false; btn.disabled = false; btn.textContent = label;
+      // Plus assez de places : on propose directement la liste d'attente
+      if (err && err.message === "SOLD_OUT"){
+        var b2 = document.createElement("button"); b2.type = "button"; b2.className = "btn btn-line"; b2.style.marginTop = "10px";
+        b2.textContent = "Rejoindre la liste d'attente"; b2.onclick = function(){ showAlert(""); setWaitMode(true); $("submit").scrollIntoView({block:"center"}); };
+        alertBox.appendChild(document.createElement("br")); alertBox.appendChild(b2);
+      }
       if (info) Brunch.rpc("get_public_info").then(function(d){ info = d; applyInfo(); }).catch(function(){});
     });
   });
+  function joinWaitlist(tel){
+    sending = true; var btn = $("submit"), label = btn.textContent;
+    btn.disabled = true; btn.textContent = "Un instant…";
+    Brunch.rpc("join_waitlist", {p_name: val("nom"), p_whatsapp: tel, p_promo: val("promo"), p_quantity: qty}).then(function(res){
+      form.classList.add("hidden"); $("full-banner").classList.add("hidden");
+      $("wait-done-text").textContent = "Tu es n°" + res.position + " sur la liste d'attente. On t'écrit sur WhatsApp au " + Brunch.fmtPhone(tel) + " dès qu'une place se libère.";
+      $("wait-done").classList.remove("hidden"); $("wait-done").focus({preventScroll:true});
+    }).catch(function(err){
+      showAlert(Brunch.errorText(err)); sending = false; btn.disabled = false; btn.textContent = label;
+    });
+  }
 })();
 </script>
 </body>

@@ -77,6 +77,35 @@ dialog p{margin:0 0 14px}
 @keyframes flash{0%,50%{box-shadow:0 0 0 4px var(--sun)}100%{box-shadow:none}}
 .toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:90;max-width:min(560px,100% - 32px);padding:12px 18px;border-radius:14px;background:#13265C;color:#fff;font-weight:700;box-shadow:0 18px 40px -18px rgba(0,0,0,.6)}
 .toast.bad{background:#8C1D18}
+.panel{display:none;margin:0 0 18px}
+.panel.show{display:block}
+.sbtn .n{display:inline-block;min-width:1.5em;margin-left:6px;padding:0 6px;border-radius:999px;background:#F7C51E;color:#13265C;font-size:.72rem;letter-spacing:0}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:0 0 20px}
+.kpi{border:1.5px solid var(--line);border-radius:14px;padding:12px 14px}
+.kpi span{display:block;color:var(--muted);font-size:.74rem;font-weight:800;letter-spacing:.1em;text-transform:uppercase}
+.kpi b{font-family:"Anton","Impact",sans-serif;font-weight:400;font-size:1.9rem;line-height:1.1}
+.chart{margin:0 0 22px}
+.chart h3{font-size:.95rem;font-weight:800;margin:0 0 10px}
+.hbar{display:grid;grid-template-columns:90px 1fr 120px;align-items:center;gap:10px;margin:0 0 8px;font-size:.9rem}
+.hbar .track{height:18px;border-radius:4px;background:var(--sky-pale);overflow:hidden}
+.hbar .fill{height:100%;border-radius:0 4px 4px 0;background:var(--text);min-width:2px}
+.hbar .val{font-weight:800;font-variant-numeric:tabular-nums}
+.cols{display:flex;align-items:flex-end;gap:2px;height:140px;border-bottom:1.5px solid var(--line);padding-top:18px}
+.cols .c{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;height:100%;position:relative}
+.cols .c i{display:block;width:70%;max-width:26px;background:var(--text);border-radius:4px 4px 0 0;min-height:2px}
+.cols .c em{position:absolute;bottom:calc(var(--h) + 2px);font-style:normal;font-size:.72rem;font-weight:800}
+.cols-x{display:flex;gap:2px;margin-top:4px}
+.cols-x span{flex:1;text-align:center;font-size:.66rem;color:var(--muted)}
+.stat-rows{display:grid;grid-template-columns:1fr auto;gap:6px 14px;font-size:.92rem}
+.stat-rows b{font-variant-numeric:tabular-nums}
+.plist{display:grid;gap:8px}
+.prow{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1.5px solid var(--line);border-radius:12px}
+.prow .who b{display:block}
+.prow .who span{color:var(--muted);font-size:.86rem}
+.prow.done{opacity:.6}
+.presets{margin:0 0 12px}
+.proofs{display:flex;gap:6px;flex-wrap:wrap}
+
 .proof-thumb{display:block;margin:6px 0 4px;padding:0;border:1.5px solid var(--line);border-radius:10px;overflow:hidden;background:var(--sky-pale);cursor:zoom-in;width:120px;height:90px}
 .proof-thumb img{width:100%;height:100%;object-fit:cover;display:block}
 .proof-big{display:block;width:100%;max-height:38vh;object-fit:contain;border-radius:12px;border:1.5px solid var(--line);background:var(--sky-pale);margin:0 0 14px}
@@ -123,6 +152,10 @@ dialog p{margin:0 0 14px}
         <button class="sbtn" type="button" id="btn-add">+ Réservation manuelle</button>
         <button class="sbtn" type="button" id="btn-export">Export CSV</button>
         <button class="sbtn" type="button" id="btn-settings">Réglages</button>
+        <button class="sbtn" type="button" id="btn-stats">Statistiques</button>
+        <button class="sbtn" type="button" id="btn-wait">Liste d'attente<span class="n" id="wait-n">0</span></button>
+        <button class="sbtn" type="button" id="btn-broadcast">Message à tous</button>
+        <button class="sbtn" type="button" id="btn-print">Liste à imprimer</button>
       </div>
     </div>
 
@@ -161,6 +194,27 @@ dialog p{margin:0 0 14px}
         <p class="alert ko hidden" id="s-err" role="alert"></p>
         <div class="row"><button class="btn btn-sun" type="submit">Enregistrer</button></div>
       </form>
+    </section>
+
+    <section class="card panel" id="stats-panel"><h2>Statistiques</h2><div id="stats-body"></div></section>
+
+    <section class="card panel" id="wait-panel">
+      <h2>Liste d'attente</h2>
+      <p class="muted" style="margin:-6px 0 14px">Personnes inscrites quand c'était complet. Quand des places se libèrent, prévenez-les dans l'ordre.</p>
+      <div class="plist" id="wait-list"></div>
+    </section>
+
+    <section class="card panel" id="bc-panel">
+      <h2>Message à tous les invités</h2>
+      <div class="row presets">
+        <button class="sbtn" type="button" data-preset="lieu">Annonce du lieu</button>
+        <button class="sbtn" type="button" data-preset="veille">Rappel la veille</button>
+      </div>
+      <label for="bc-text">Message</label>
+      <textarea id="bc-text" rows="6"></textarea>
+      <p class="muted" style="font-size:.88rem;margin:6px 0 14px">Le prénom et le lien du billet de chaque invité sont ajoutés automatiquement. Appuyez sur « Envoyer » pour chaque personne : WhatsApp s'ouvre avec le message prêt.</p>
+      <p style="font-weight:800;margin:0 0 10px" id="bc-count"></p>
+      <div class="plist" id="bc-list"></div>
     </section>
 
     <div class="toolbar">
@@ -243,7 +297,7 @@ dialog p{margin:0 0 14px}
 <script>
 (function(){
   var sb = Brunch.sb, $ = function(id){ return document.getElementById(id); };
-  var rows = [], sms = [], settings = null, me = null, filter = "declared", timer = null;
+  var rows = [], sms = [], waitlist = [], settings = null, me = null, filter = "declared", timer = null;
   var OPS = {airtel:"Airtel", moov:"Moov"};
   var STATUS = {
     pending:["En attente de paiement","wait"], declared:["À vérifier","wait"], validated:["Validée","ok"],
@@ -302,11 +356,14 @@ dialog p{margin:0 0 14px}
   // Captures d'écran : liens temporaires signés (bucket privé)
   var proofUrls = {};
   async function loadProofs(){
-    var need = rows.filter(function(r){ return r.proof_path && !proofUrls[r.proof_path]; }).map(function(r){ return r.proof_path; });
+    var need = [];
+    rows.forEach(function(r){ proofsOf(r).forEach(function(x){ if (!proofUrls[x] && need.indexOf(x) < 0) need.push(x); }); });
     if (!need.length || !sb.storage) return;
     var res = await sb.storage.from("proofs").createSignedUrls(need, 6 * 3600);
     (res.data || []).forEach(function(x){ if (x.signedUrl) proofUrls[x.path] = x.signedUrl; });
   }
+  function proofsOf(r){ return (r.proof_history && r.proof_history.length) ? r.proof_history : (r.proof_path ? [r.proof_path] : []); }
+  function proofImgAt(path, r, cls){ var im = document.createElement("img"); im.className = cls || ""; im.src = proofUrls[path] || ""; im.alt = "Capture du paiement de " + fullName(r); return im; }
   function isDuplicate(r){ return !!r.proof_hash && rows.some(function(x){ return x.id !== r.id && x.proof_hash === r.proof_hash; }); }
   function proofImg(r, cls){ var im = document.createElement("img"); im.className = cls || ""; im.src = proofUrls[r.proof_path] || ""; im.alt = "Capture du paiement de " + fullName(r); return im; }
   function ticketUrl(r){ return SITE + Brunch.resaUrl(r.ref, r.access_token); }
@@ -346,10 +403,12 @@ dialog p{margin:0 0 14px}
     var res = await Promise.all([
       sb.from("reservations").select("*").order("created_at", {ascending:false}),
       sb.from("settings").select("*").single(),
-      sb.from("sms_inbox").select("*").order("received_at", {ascending:false}).limit(500)
+      sb.from("sms_inbox").select("*").order("received_at", {ascending:false}).limit(500),
+      sb.from("waitlist").select("*").order("created_at", {ascending:true})
     ]);
     if (res[0].error){ if (res[0].error.code === "PGRST301") return showLogin("Session expirée."); return; }
-    rows = res[0].data; settings = res[1].data; sms = res[2].data || [];
+    rows = res[0].data; settings = res[1].data; sms = res[2].data || []; waitlist = (res[3] && res[3].data) || [];
+    renderPanels();
     await loadProofs().catch(function(){});
     renderStats(); renderTabs(); renderList();
     focusRef();
@@ -443,9 +502,14 @@ dialog p{margin:0 0 14px}
       }
     }
     if (r.proof_path){
-      var th = el("button", "proof-thumb"); th.type = "button"; th.title = "Agrandir la capture";
-      th.append(proofImg(r)); th.onclick = function(){ ask({title:"Capture de " + fullName(r), body:[proofImg(r, "proof-big")], ok:"Fermer", cancel:false}); };
-      pay.append(th);
+      var box2 = el("div", "proofs"), list = proofsOf(r);
+      list.forEach(function(path, i){
+        var th = el("button", "proof-thumb"); th.type = "button"; th.title = "Agrandir la capture";
+        th.append(proofImgAt(path, r)); box2.append(th);
+        th.onclick = function(){ ask({title:(list.length > 1 ? "Capture " + (i + 1) + "/" + list.length + " de " : "Capture de ") + fullName(r), body:[proofImgAt(path, r, "proof-big")], ok:"Fermer", cancel:false}); };
+      });
+      pay.append(box2);
+      if (list.length > 1) pay.append(el("div", "meta", list.length + " captures envoyées (paiement + complément)"));
       if (r.declared_at && !r.txn_id) pay.append(el("div", "meta", "Capture envoyée " + ago(r.declared_at)));
       if (isDuplicate(r)) pay.append(el("span", "match warn", "⚠ Même capture qu'une autre réservation"));
     } else if (s === "declared" && !r.txn_id){
@@ -465,6 +529,7 @@ dialog p{margin:0 0 14px}
     if (s === "declared") btn("Refuser", "ko", function(){ reject(r); });
     if (s === "rejected") btn("Prévenir sur WhatsApp", "", function(){ rejectDialog(r, r.rejected_reason || "paiement non confirmé"); });
     if (s === "cancelled" || s === "expired") btn("Prévenir sur WhatsApp", "", function(){ notifyDialog(r); });
+    if (s === "cancelled" || s === "rejected" || s === "expired") btn("Rouvrir", "ok", function(){ reopen(r); });
     if (s === "validated"){
       var wa = el("a", "sbtn", "WhatsApp");
       wa.href = Brunch.waLink(r.whatsapp, waTicketText(r)); wa.target = "_blank"; wa.rel = "noopener"; acts.append(wa);
@@ -519,6 +584,22 @@ dialog p{margin:0 0 14px}
     wa.href = Brunch.waLink(r.whatsapp, text); wa.target = "_blank"; wa.rel = "noopener";
     ask({title:"Paiement refusé", body:[el("p", "", "Préviens " + fullName(r) + " pour qu'il ou elle renvoie une capture :"), wa,
       el("p", "muted", "Sa page de suivi affiche déjà le motif et le bouton pour renvoyer une capture.")], ok:"Terminé", cancel:false});
+  }
+  // Rouvrir une réservation annulée / refusée / expirée : l'invité peut renvoyer une capture (ex. complément)
+  async function reopen(r){
+    var msg = await ask({title:"Rouvrir la réservation de " + fullName(r) + " ?",
+      body:[el("p", "", "La personne pourra envoyer une nouvelle capture depuis son billet, même si c'est complet.")],
+      input:"Message pour l'invité", ok:"Rouvrir"});
+    if (msg === null) return;
+    msg = msg || "Il manque une partie du paiement : envoie la capture du complément.";
+    var ok = false;
+    await act(async function(){ await Brunch.rpc("admin_reopen", {p_id:r.id, p_message:msg}); ok = true; });
+    if (!ok) return;
+    var text = "Bonjour " + r.first_name + ", ta réservation " + r.ref + " pour le Grand Brunch Retrouvailles est rouverte. " + msg.replace(/\.?$/, ".") +
+      " Envoie ta capture ici : " + ticketUrl(r);
+    var wa = el("a", "btn btn-wa", "Prévenir " + r.first_name + " sur WhatsApp");
+    wa.href = Brunch.waLink(r.whatsapp, text); wa.target = "_blank"; wa.rel = "noopener";
+    ask({title:"Réservation rouverte", body:[el("p", "", "Préviens " + fullName(r) + " pour qu'il ou elle envoie sa capture :"), wa], ok:"Terminé", cancel:false});
   }
   // Réservation annulée ou expirée : prévenir l'invité sur WhatsApp avec un message adapté
   function notifyDialog(r){
@@ -602,6 +683,7 @@ dialog p{margin:0 0 14px}
     "s-moov":"moov_number","s-moov-name":"moov_name","s-contact":"contact_whatsapp","s-venue":"venue_name","s-address":"venue_address","s-maps":"venue_maps_url","s-notes":"venue_notes"};
   $("btn-settings").onclick = function(){
     var box = $("settings"), open = !box.classList.contains("show");
+    ["stats-panel", "wait-panel", "bc-panel"].forEach(function(k){ $(k).classList.remove("show"); });
     box.classList.toggle("show", open);
     if (!open) return;
     Object.keys(MAP).forEach(function(id){ $(id).value = settings[MAP[id]] == null ? "" : settings[MAP[id]]; });
@@ -632,6 +714,179 @@ dialog p{margin:0 0 14px}
     a.href = URL.createObjectURL(new Blob(["﻿" + csv], {type:"text/csv;charset=utf-8"}));
     a.download = "reservations-brunch-" + new Date().toISOString().slice(0, 10) + ".csv"; a.click();
     setTimeout(function(){ URL.revokeObjectURL(a.href); }, 1000);
+  };
+
+  // ---------- Panneaux ----------
+  var PANELS = {"btn-stats":"stats-panel", "btn-wait":"wait-panel", "btn-broadcast":"bc-panel"};
+  Object.keys(PANELS).forEach(function(b){
+    $(b).addEventListener("click", function(){
+      var p = $(PANELS[b]), open = !p.classList.contains("show");
+      Object.keys(PANELS).forEach(function(k){ $(PANELS[k]).classList.remove("show"); });
+      $("settings").classList.remove("show");
+      p.classList.toggle("show", open);
+      if (open){ renderPanels(); p.scrollIntoView({behavior:"smooth", block:"start"}); }
+    });
+  });
+  function renderPanels(){
+    var waiting = waitlist.filter(function(w){ return w.status === "waiting"; }).length;
+    $("wait-n").textContent = waiting; $("wait-n").style.display = waiting ? "" : "none";
+    if ($("stats-panel").classList.contains("show")) renderStatsPanel();
+    if ($("wait-panel").classList.contains("show")) renderWaitlist();
+    if ($("bc-panel").classList.contains("show")) renderBroadcast();
+  }
+
+  // Statistiques : une seule teinte (marine), valeurs écrites, détail au survol
+  function renderStatsPanel(){
+    var val = rows.filter(function(r){ return r.status === "validated"; });
+    var places = function(list){ return list.reduce(function(a, r){ return a + r.quantity; }, 0); };
+    var sold = places(val), cap = settings.capacity || 1;
+    var body = $("stats-body"); body.replaceChildren();
+    var k = el("div", "kpis");
+    [["Remplissage", Math.round(sold * 100 / cap) + " %"], ["Places vendues", sold + " / " + cap], ["Encaissé", Brunch.fcfa(val.reduce(function(a, r){ return a + r.amount; }, 0))],
+     ["Réservations validées", String(val.length)], ["Liste d'attente", String(waitlist.filter(function(w){ return w.status === "waiting"; }).length)]]
+      .forEach(function(x){ var d = el("div", "kpi"); d.append(el("span", "", x[0]), el("b", "", x[1])); k.append(d); });
+    body.append(k);
+
+    var c1 = el("div", "chart"); c1.append(el("h3", "", "Places vendues par promotion"));
+    var promos = ["2018", "2019", "2020"], byPromo = promos.map(function(p){ return places(val.filter(function(r){ return r.promo === p; })); });
+    var max = Math.max.apply(null, byPromo.concat([1]));
+    promos.forEach(function(p, i){
+      var row = el("div", "hbar"); row.title = "Promo " + p + " : " + byPromo[i] + " place(s) vendue(s)";
+      var tr = el("div", "track"), fi = el("div", "fill"); fi.style.width = (byPromo[i] * 100 / max) + "%"; tr.append(fi);
+      row.append(el("span", "", "Promo " + p), tr, el("span", "val", byPromo[i] + (byPromo[i] > 1 ? " places" : " place")));
+      c1.append(row);
+    });
+    body.append(c1);
+
+    var c2 = el("div", "chart"); c2.append(el("h3", "", "Réservations par jour (14 derniers jours)"));
+    var days = [], counts = [];
+    for (var i = 13; i >= 0; i--){ var d = new Date(Date.now() - i * 864e5); days.push(d.toLocaleDateString("fr-FR", {timeZone:"Africa/Libreville", day:"2-digit", month:"2-digit"})); counts.push(0); }
+    rows.forEach(function(r){
+      var key = new Date(r.created_at).toLocaleDateString("fr-FR", {timeZone:"Africa/Libreville", day:"2-digit", month:"2-digit"});
+      var idx = days.indexOf(key); if (idx >= 0 && r.status !== "absent") counts[idx]++;
+    });
+    var mx = Math.max.apply(null, counts.concat([1])), cols = el("div", "cols"), xs = el("div", "cols-x");
+    counts.forEach(function(n, j){
+      var c = el("div", "c"); c.title = days[j] + " : " + n + " réservation(s)";
+      var h = Math.round(n * 100 / mx) + "%", bar = el("i"); bar.style.height = h; c.style.setProperty("--h", h);
+      c.append(bar); if (n) c.append(el("em", "", String(n)));
+      cols.append(c); xs.append(el("span", "", j % 2 ? "" : days[j]));
+    });
+    c2.append(cols, xs); body.append(c2);
+
+    var c3 = el("div", "chart"); c3.append(el("h3", "", "Où en sont les réservations"));
+    var sr = el("div", "stat-rows");
+    [["validated", "Validées"], ["declared", "À vérifier"], ["pending", "En attente de paiement"], ["rejected", "Refusées"], ["expired", "Expirées"], ["cancelled", "Annulées"]].forEach(function(x){
+      var list = rows.filter(function(r){ return effStatus(r) === x[0]; });
+      sr.append(el("span", "", x[1]), el("b", "", list.length + " · " + places(list) + " pl."));
+    });
+    c3.append(sr); body.append(c3);
+  }
+
+  // Liste d'attente
+  function renderWaitlist(){
+    var list = waitlist.filter(function(w){ return w.status !== "removed"; });
+    var box = $("wait-list"); box.replaceChildren();
+    if (!list.length){ box.append(el("div", "empty", "Personne sur la liste d'attente pour le moment.")); return; }
+    list.forEach(function(w, i){
+      var row = el("div", "prow" + (w.status === "notified" ? " done" : ""));
+      var who = el("div", "who"); who.append(el("b", "", (i + 1) + ". " + w.name), el("span", "", "Promo " + w.promo + " · " + w.quantity + (w.quantity > 1 ? " places" : " place") + " · " + Brunch.fmtPhone(w.whatsapp) + (w.status === "notified" ? " · prévenu(e) ✓" : "")));
+      var acts = el("div", "row");
+      var first = w.name.split(/\s+/)[0];
+      var wa = el("a", "sbtn ok", w.status === "notified" ? "Relancer" : "Prévenir");
+      wa.href = Brunch.waLink(w.whatsapp, "Bonjour " + first + ", bonne nouvelle : des places se sont libérées pour le Grand Brunch Retrouvailles ! Réserve vite la tienne ici : " + SITE);
+      wa.target = "_blank"; wa.rel = "noopener";
+      wa.addEventListener("click", function(){ Brunch.rpc("admin_waitlist_set", {p_id:w.id, p_status:"notified"}).then(refresh).catch(function(){}); });
+      var rm = el("button", "sbtn ko", "Retirer"); rm.type = "button";
+      rm.onclick = async function(){
+        if (!(await ask({title:"Retirer " + w.name + " de la liste ?", body:[el("p", "", "Par exemple parce que la personne a réservé ou ne viendra pas.")], ok:"Retirer", danger:true}))) return;
+        act(function(){ return Brunch.rpc("admin_waitlist_set", {p_id:w.id, p_status:"removed"}); });
+      };
+      acts.append(wa, rm); row.append(who, acts); box.append(row);
+    });
+  }
+
+  // Message à tous les invités (annonce du lieu, rappel la veille)
+  var bcPreset = "lieu";
+  function venueText(){
+    if (!settings.venue_name) return "";
+    return settings.venue_name + (settings.venue_address ? ", " + settings.venue_address : "");
+  }
+  function presetText(k){
+    var v = venueText();
+    if (k === "veille") return "Bonjour {prénom} ! C'est demain 🎉 On se retrouve samedi 31 octobre à partir de 12h" + (v ? " à " + v : "") +
+      ". N'oublie pas ton billet (le QR code) sur ton téléphone : {lien}";
+    return "Bonjour {prénom} ! 📍 Le lieu du Grand Brunch Retrouvailles est enfin dévoilé : " + (v || "[renseigne d'abord le lieu dans Réglages]") +
+      ". Rendez-vous samedi 31 octobre à partir de 12h. Pour l'itinéraire et ton QR code d'entrée, ouvre ton billet : {lien}";
+  }
+  document.querySelectorAll("[data-preset]").forEach(function(b){
+    b.onclick = function(){ bcPreset = b.dataset.preset; $("bc-text").value = presetText(bcPreset); renderBroadcast(); };
+  });
+  var sentKey = function(ref){ return "brunch-bc:" + bcPreset + ":" + ref; };
+  function renderBroadcast(){
+    if (!$("bc-text").value) $("bc-text").value = presetText(bcPreset);
+    document.querySelectorAll("[data-preset]").forEach(function(b){ b.classList.toggle("ok", b.dataset.preset === bcPreset); });
+    var list = rows.filter(function(r){ return r.status === "validated"; }).sort(function(a, b){ return fullName(a).localeCompare(fullName(b), "fr"); });
+    var box = $("bc-list"); box.replaceChildren();
+    var sent = 0;
+    list.forEach(function(r){
+      var done = false; try { done = !!localStorage.getItem(sentKey(r.ref)); } catch(e){}
+      if (done) sent++;
+      var row = el("div", "prow" + (done ? " done" : ""));
+      var who = el("div", "who"); who.append(el("b", "", fullName(r)), el("span", "", "Promo " + r.promo + " · " + r.quantity + (r.quantity > 1 ? " places" : " place") + (done ? " · envoyé ✓" : "")));
+      var wa = el("a", "sbtn ok", done ? "Renvoyer" : "Envoyer");
+      wa.target = "_blank"; wa.rel = "noopener";
+      wa.addEventListener("click", function(){
+        wa.href = Brunch.waLink(r.whatsapp, $("bc-text").value.replace(/\{prénom\}/g, r.first_name).replace(/\{lien\}/g, ticketUrl(r)));
+        try { localStorage.setItem(sentKey(r.ref), "1"); } catch(e){}
+        setTimeout(renderBroadcast, 300);
+      });
+      wa.href = "#";
+      row.append(who, wa); box.append(row);
+    });
+    $("bc-count").textContent = list.length ? sent + " / " + list.length + " invités prévenus sur ce téléphone" : "";
+    if (!list.length) box.append(el("div", "empty", "Aucune réservation validée pour le moment."));
+  }
+
+  // Liste des invités à imprimer (PDF) : plan B pour l'entrée le jour J
+  function loadJs(src){ return new Promise(function(ok, ko){ var x = document.createElement("script"); x.src = src; x.onload = ok; x.onerror = ko; document.head.appendChild(x); }); }
+  $("btn-print").onclick = async function(){
+    var b = this; b.disabled = true; b.textContent = "Préparation…";
+    try {
+      if (!window.jspdf) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+      if (!window.jspdf.jsPDF.API.autoTable) await loadJs("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js");
+      var list = rows.filter(function(r){ return r.status === "validated"; }).sort(function(a, c){ return fullName(a).localeCompare(fullName(c), "fr"); });
+      var total = list.reduce(function(a, r){ return a + r.quantity; }, 0);
+      var doc = new window.jspdf.jsPDF({unit:"mm", format:"a4"});
+      doc.setFillColor(19, 38, 92); doc.rect(0, 0, 210, 30, "F");
+      doc.setTextColor(247, 197, 30); doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+      doc.text("Grand Brunch Retrouvailles", 14, 14);
+      doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "normal");
+      doc.text("Liste des invités · samedi 31 octobre 2026 · " + list.length + " réservations · " + total + " personnes", 14, 22);
+      doc.autoTable({
+        startY: 36,
+        head: [["N°", "Nom et prénom", "Promo", "Places", "Réf.", "Code ticket", "WhatsApp", "Entrées"]],
+        body: list.map(function(r, i){ return [i + 1, fullName(r), r.promo, r.quantity, r.ref, r.ticket_code || "", Brunch.fmtPhone(r.whatsapp), ""]; }),
+        styles: {font:"helvetica", fontSize:9.5, cellPadding:2.4, textColor:[19, 38, 92], lineColor:[213, 227, 241], lineWidth:.2},
+        headStyles: {fillColor:[247, 197, 30], textColor:[19, 38, 92], fontStyle:"bold"},
+        alternateRowStyles: {fillColor:[234, 245, 253]},
+        columnStyles: {0:{cellWidth:10, halign:"center"}, 2:{cellWidth:15, halign:"center"}, 3:{cellWidth:15, halign:"center"}, 5:{fontStyle:"bold"}, 7:{cellWidth:24}},
+        didDrawCell: function(d){
+          // Cases à cocher, une par place, dans la colonne « Entrées »
+          if (d.section === "body" && d.column.index === 7){
+            var n = list[d.row.index].quantity, sz = 3.6, x = d.cell.x + d.cell.width - 2 - n * (sz + 1), y = d.cell.y + (d.cell.height - sz) / 2;
+            doc.setDrawColor(19, 38, 92); doc.setLineWidth(.3);
+            for (var q = 0; q < Math.min(n, 5); q++) doc.rect(x + q * (sz + 1), y, sz, sz);
+          }
+        },
+        didDrawPage: function(){
+          doc.setFontSize(8); doc.setTextColor(90, 103, 140);
+          doc.text("Imprimé le " + new Date().toLocaleString("fr-FR", {timeZone:"Africa/Libreville"}) + " · page " + doc.internal.getNumberOfPages(), 14, 290);
+        }
+      });
+      doc.save("liste-invites-grand-brunch.pdf");
+    } catch(e){ console.error(e); toast("La liste n'a pas pu être créée. Réessaie.", true); }
+    b.disabled = false; b.textContent = "Liste à imprimer";
   };
 
   // ---------- Notifications push ----------
