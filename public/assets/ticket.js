@@ -15,7 +15,7 @@
   function render(t){
     var name = (t.first_name + " " + (t.last_name || "")).trim();
     var people = t.quantity + (t.quantity > 1 ? " personnes" : " personne");
-    var venue = t.venue && t.venue.name ? t.venue.name + (t.venue.address ? " · " + t.venue.address : "") : "Communiqué très bientôt";
+    var venue = t.venue && t.venue.name ? t.venue.name + (t.venue.address ? " · " + t.venue.address : "") : "Dévoilé quelques jours avant le brunch, ici même";
 
     var tk = el("article", "tk"); tk.setAttribute("aria-label", "Ticket d'entrée de " + name);
 

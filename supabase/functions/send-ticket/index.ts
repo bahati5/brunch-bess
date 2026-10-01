@@ -170,7 +170,7 @@ Deno.serve(async (req) => {
     promo: r.promo,
     people: r.quantity > 1 ? `${r.quantity} personnes` : "1 personne",
     amount: fcfa(r.amount),
-    venue: s?.venue_name ? s.venue_name + (s.venue_address ? " · " + s.venue_address : "") : "Communiqué très bientôt",
+    venue: s?.venue_name ? s.venue_name + (s.venue_address ? " · " + s.venue_address : "") : "Dévoilé quelques jours avant le brunch, sur ton ticket en ligne",
     link: `${site}/reservation.html?r=${encodeURIComponent(r.ref)}&t=${r.access_token}`,
   };
 
