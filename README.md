@@ -82,6 +82,9 @@ Tout se fait depuis les interfaces web, sans installer d'outil.
    → Deploy, puis désactiver **Verify JWT**.
 3. Redéployer `notify-admins` (la notification indique « Capture reçue »).
 
+### 6 quater. Rouvrir, liste d'attente
+SQL Editor : exécuter `supabase/migrations/20261003000000_rouvrir_attente.sql`.
+
 ### 6 bis. Notifications des admins sur téléphone
 1. SQL Editor : exécuter `supabase/migrations/20261001000000_push_admins.sql` (si pas déjà fait à l'étape 2).
 2. **Edge Functions → Deploy a new function → Via Editor**, nom `notify-admins`, coller `supabase/functions/notify-admins/index.ts` → Deploy, puis désactiver **Verify JWT**.

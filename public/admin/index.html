@@ -862,7 +862,7 @@ dialog p{margin:0 0 14px}
       doc.setTextColor(247, 197, 30); doc.setFont("helvetica", "bold"); doc.setFontSize(18);
       doc.text("Grand Brunch Retrouvailles", 14, 14);
       doc.setTextColor(255, 255, 255); doc.setFontSize(11); doc.setFont("helvetica", "normal");
-      doc.text("Liste des invités · samedi 31 octobre 2026 · " + list.length + " réservations · " + total + " personnes", 14, 22);
+      doc.text("Liste des invités · samedi 31 octobre 2026 · " + list.length + (list.length > 1 ? " réservations · " : " réservation · ") + total + (total > 1 ? " personnes" : " personne"), 14, 22);
       doc.autoTable({
         startY: 36,
         head: [["N°", "Nom et prénom", "Promo", "Places", "Réf.", "Code ticket", "WhatsApp", "Entrées"]],
@@ -870,7 +870,7 @@ dialog p{margin:0 0 14px}
         styles: {font:"helvetica", fontSize:9.5, cellPadding:2.4, textColor:[19, 38, 92], lineColor:[213, 227, 241], lineWidth:.2},
         headStyles: {fillColor:[247, 197, 30], textColor:[19, 38, 92], fontStyle:"bold"},
         alternateRowStyles: {fillColor:[234, 245, 253]},
-        columnStyles: {0:{cellWidth:10, halign:"center"}, 2:{cellWidth:15, halign:"center"}, 3:{cellWidth:15, halign:"center"}, 5:{fontStyle:"bold"}, 7:{cellWidth:24}},
+        columnStyles: {0:{cellWidth:10, halign:"center"}, 2:{cellWidth:18, halign:"center"}, 3:{cellWidth:16, halign:"center"}, 5:{fontStyle:"bold"}, 7:{cellWidth:24}},
         didDrawCell: function(d){
           // Cases à cocher, une par place, dans la colonne « Entrées »
           if (d.section === "body" && d.column.index === 7){
