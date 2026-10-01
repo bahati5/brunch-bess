@@ -683,7 +683,13 @@ dialog p{margin:0 0 14px}
   async function saveSub(sub){ await Brunch.rpc("admin_save_push", {p_sub:sub.toJSON(), p_device:deviceName()}); }
   async function testNotif(){
     var d = await invoke("notify-admins", {test:true});
-    if (d.sent > 0){ $("nt-ok").textContent = "Notification de test envoyée à " + d.sent + " appareil(s). Elle doit apparaître dans quelques secondes."; show($("nt-ok"), true); }
+    // Détail appareil par appareil (ex. « iPhone (appli) : envoyé ✓ »)
+    var lines = (d.results || []).map(function(x){ return x.device.split(" · ")[0] + " : " + (x.ok ? "envoyé ✓" : "refusé par " + x.service + (x.status ? " (code " + x.status + ")" : "")); });
+    if (d.sent > 0){
+      $("nt-ok").textContent = "Notification de test envoyée. " + lines.join(" · ") + ". Sur iPhone, elle peut mettre une à deux minutes à arriver.";
+      show($("nt-ok"), true);
+      if (d.sent < (d.results || []).length){ $("nt-err").textContent = "Un appareil n'a pas pu être prévenu : réactive les notifications dessus (Désactiver puis Activer)."; show($("nt-err"), true); }
+    }
     else { $("nt-err").textContent = "Aucune notification envoyée" + (d.error ? " : " + d.error : d.devices === 0 ? " : aucun appareil enregistré pour ton compte." : "."); show($("nt-err"), true); }
   }
   $("btn-notif").onclick = openNotif;

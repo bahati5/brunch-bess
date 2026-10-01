@@ -35,7 +35,7 @@ Deno.serve(async (req) => {
   const site = (Deno.env.get("SITE_URL") ?? "").replace(/\/$/, "");
 
   let payload: Record<string, unknown>;
-  let subsQuery = db.from("push_subscriptions").select("endpoint, subscription");
+  let subsQuery = db.from("push_subscriptions").select("endpoint, subscription, device");
 
   if (body.test) {
     const jwt = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
@@ -67,17 +67,22 @@ Deno.serve(async (req) => {
   const { data: subs } = await subsQuery;
   let sent = 0;
   const gone: string[] = [];
+  // Résultat appareil par appareil (affiché dans l'admin lors d'un test)
+  const results: { device: string; service: string; ok: boolean; status?: number; error?: string }[] = [];
   await Promise.all((subs ?? []).map(async (s) => {
+    const service = s.endpoint.includes("push.apple.com") ? "Apple" : s.endpoint.includes("googleapis.com") ? "Google" : s.endpoint.includes("mozilla") ? "Mozilla" : "autre";
     try {
       await webpush.sendNotification(s.subscription, JSON.stringify(payload), { TTL: 3600, urgency: "high" });
       sent++;
+      results.push({ device: s.device ?? "appareil", service, ok: true });
     } catch (e) {
-      const code = (e as { statusCode?: number }).statusCode;
+      const err = e as { statusCode?: number; body?: string; message?: string };
       // Abonnement expiré ou révoqué : on le supprime
-      if (code === 404 || code === 410) gone.push(s.endpoint);
-      else console.error("push", code, (e as Error).message);
+      if (err.statusCode === 404 || err.statusCode === 410) gone.push(s.endpoint);
+      console.error("push", service, err.statusCode, err.body ?? err.message);
+      results.push({ device: s.device ?? "appareil", service, ok: false, status: err.statusCode, error: String(err.body || err.message || "").slice(0, 160) });
     }
   }));
   if (gone.length) await db.from("push_subscriptions").delete().in("endpoint", gone);
-  return json({ sent, removed: gone.length, devices: subs?.length ?? 0 });
+  return json({ sent, removed: gone.length, devices: subs?.length ?? 0, results });
 });
