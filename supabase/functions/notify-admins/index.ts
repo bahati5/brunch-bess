@@ -16,7 +16,7 @@ const cors = {
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
-const fcfa = (n: number) => n.toLocaleString("fr-FR").replace(/ | /g, " ") + " FCFA";
+const fcfa = (n: number) => n.toLocaleString("fr-FR").replace(/\u202f|\u00a0/g, " ") + " FCFA";
 const OPS: Record<string, string> = { airtel: "Airtel", moov: "Moov" };
 // « +241XXXXXXXX » → « +241 XX XX XX XX »
 const phone = (v: string | null) => {
